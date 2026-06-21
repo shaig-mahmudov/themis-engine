@@ -41,7 +41,7 @@ class CombatControllerTest {
         );
         // Equip weapon (Longsword 1d8, threat 19, mult 2)
         Weapon longsword = new Weapon(
-            "lswd", "Longsword", Map.of(), DiceRoll.parse("1d8"), 19, 2
+            "lswd", "Longsword", WeaponType.MELEE, Map.of(), DiceRoll.parse("1d8"), 19, 2
         );
         attacker.equipWeapon(longsword);
         characterStore.save(attacker);

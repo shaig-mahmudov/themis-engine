@@ -1,10 +1,8 @@
 package com.themis.engine.api;
 
 import com.themis.engine.domain.Character;
-import com.themis.engine.domain.CharacterStore;
-import com.themis.engine.domain.Condition;
-import com.themis.engine.domain.EquippableItem;
-import com.themis.engine.domain.Weapon;
+import com.themis.engine.domain.CharacterService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,94 +13,93 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/characters")
 public class CharacterController {
 
-    private final CharacterStore characterStore;
+    private final CharacterService characterService;
 
-    public CharacterController(CharacterStore characterStore) {
-        this.characterStore = characterStore;
+    public CharacterController(CharacterService characterService) {
+        this.characterService = characterService;
     }
 
     @PostMapping
-    public ResponseEntity<CharacterResponseDto> createCharacter(@RequestBody CharacterRequestDto request) {
+    public ResponseEntity<CharacterResponseDto> createCharacter(@Valid @RequestBody CharacterRequestDto request) {
         Character character = request.toDomain();
-        Character saved = characterStore.save(character);
-        return ResponseEntity.ok(CharacterResponseDto.fromDomain(saved));
+        Character saved = characterService.createCharacter(character);
+        return ResponseEntity.status(201).body(CharacterResponseDto.fromDomain(saved));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<CharacterResponseDto> getCharacter(@PathVariable String id) {
-        return characterStore.findById(id)
+        return characterService.getCharacter(id)
             .map(CharacterResponseDto::fromDomain)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/equip-item")
-    public ResponseEntity<CharacterResponseDto> equipItem(@PathVariable String id, @RequestBody EquippableItem item) {
-        return characterStore.findById(id)
-            .map(c -> {
-                c.equip(item);
-                Character saved = characterStore.save(c);
-                return ResponseEntity.ok(CharacterResponseDto.fromDomain(saved));
-            })
+    public ResponseEntity<CharacterResponseDto> equipItem(
+        @PathVariable String id,
+        @Valid @RequestBody EquipItemRequestDto request
+    ) {
+        return characterService.equipItem(id, request.toDomain())
+            .map(CharacterResponseDto::fromDomain)
+            .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/equip-weapon")
-    public ResponseEntity<CharacterResponseDto> equipWeapon(@PathVariable String id, @RequestBody Weapon weapon) {
-        return characterStore.findById(id)
-            .map(c -> {
-                c.equipWeapon(weapon);
-                Character saved = characterStore.save(c);
-                return ResponseEntity.ok(CharacterResponseDto.fromDomain(saved));
-            })
+    public ResponseEntity<CharacterResponseDto> equipWeapon(
+        @PathVariable String id,
+        @Valid @RequestBody EquipWeaponRequestDto request
+    ) {
+        return characterService.equipWeapon(id, request.toDomain())
+            .map(CharacterResponseDto::fromDomain)
+            .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/apply-condition")
-    public ResponseEntity<CharacterResponseDto> applyCondition(@PathVariable String id, @RequestBody Condition condition) {
-        return characterStore.findById(id)
-            .map(c -> {
-                c.applyCondition(condition);
-                Character saved = characterStore.save(c);
-                return ResponseEntity.ok(CharacterResponseDto.fromDomain(saved));
-            })
+    public ResponseEntity<CharacterResponseDto> applyCondition(
+        @PathVariable String id,
+        @Valid @RequestBody ApplyConditionRequestDto request
+    ) {
+        return characterService.applyCondition(id, request.toDomain())
+            .map(CharacterResponseDto::fromDomain)
+            .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/rest")
     public ResponseEntity<CharacterResponseDto> restCharacter(@PathVariable String id) {
-        return characterStore.findById(id)
-            .map(c -> {
-                c.getTurnState().reset();
-                if (c.getSpellcastingFeature() != null) {
-                    c.getSpellcastingFeature().restAndRecover();
-                }
-                c.heal(c.getMaxHitPoints()); // Full heal during rest
-                Character saved = characterStore.save(c);
-                return ResponseEntity.ok(CharacterResponseDto.fromDomain(saved));
-            })
+        return characterService.restCharacter(id)
+            .map(CharacterResponseDto::fromDomain)
+            .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/damage")
-    public ResponseEntity<CharacterResponseDto> damageCharacter(@PathVariable String id, @RequestParam int amount) {
-        return characterStore.findById(id)
-            .map(c -> {
-                c.damage(amount);
-                Character saved = characterStore.save(c);
-                return ResponseEntity.ok(CharacterResponseDto.fromDomain(saved));
-            })
+    public ResponseEntity<CharacterResponseDto> damageCharacter(
+        @PathVariable String id,
+        @RequestParam int amount
+    ) {
+        if (amount < 0) {
+            throw new IllegalArgumentException("Damage amount cannot be negative");
+        }
+        return characterService.damageCharacter(id, amount)
+            .map(CharacterResponseDto::fromDomain)
+            .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/heal")
-    public ResponseEntity<CharacterResponseDto> healCharacter(@PathVariable String id, @RequestParam int amount) {
-        return characterStore.findById(id)
-            .map(c -> {
-                c.heal(amount);
-                Character saved = characterStore.save(c);
-                return ResponseEntity.ok(CharacterResponseDto.fromDomain(saved));
-            })
+    public ResponseEntity<CharacterResponseDto> healCharacter(
+        @PathVariable String id,
+        @RequestParam int amount
+    ) {
+        if (amount < 0) {
+            throw new IllegalArgumentException("Healing amount cannot be negative");
+        }
+        return characterService.healCharacter(id, amount)
+            .map(CharacterResponseDto::fromDomain)
+            .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 }

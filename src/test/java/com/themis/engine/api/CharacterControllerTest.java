@@ -43,7 +43,7 @@ class CharacterControllerTest {
         mockMvc.perform(post("/api/characters")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value("test-char-1"))
                 .andExpect(jsonPath("$.name").value("Valeros"))
                 .andExpect(jsonPath("$.level").value(3))
@@ -70,7 +70,7 @@ class CharacterControllerTest {
         mockMvc.perform(post("/api/characters")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         // 2. Equip item
         EquippableItem ring = new EquippableItem(
@@ -95,5 +95,52 @@ class CharacterControllerTest {
                 .content(objectMapper.writeValueAsString(shaken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.willSave").value(4)); // Base 3 + Wis 3 - Shaken 2 = 4
+    }
+
+    @Test
+    void testCreateCharacter_ValidationFailed() throws Exception {
+        // Blank name and invalid level
+        CharacterRequestDto request = new CharacterRequestDto(
+            "test-char-3",
+            "",
+            0,
+            16, 12, 14, 10, 10, 10,
+            24, 3, 3, 1, 1
+        );
+
+        mockMvc.perform(post("/api/characters")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Validation Failed"))
+                .andExpect(jsonPath("$.message").value("Input validation failed for request body"));
+    }
+
+    @Test
+    void testEquipWeapon_ValidationFailed() throws Exception {
+        // Invalid critical multiplier (<2) and invalid threat min (<15)
+        EquipWeaponRequestDto request = new EquipWeaponRequestDto(
+            "invalid-weap",
+            "Invalid Weapon",
+            WeaponType.MELEE,
+            Map.of(),
+            "1d8",
+            14,
+            1
+        );
+
+        mockMvc.perform(post("/api/characters/test-char-2/equip-weapon")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Validation Failed"));
+    }
+
+    @Test
+    void testDamageCharacter_ValidationFailed() throws Exception {
+        mockMvc.perform(post("/api/characters/test-char-2/damage?amount=-5"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Damage amount cannot be negative"));
     }
 }

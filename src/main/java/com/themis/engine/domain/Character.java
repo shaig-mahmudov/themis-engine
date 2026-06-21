@@ -30,6 +30,8 @@ public class Character {
     private int currentDamage = 0;
     private final List<EquippableItem> equippedItems = new ArrayList<>();
     private final List<Condition> activeConditions = new ArrayList<>();
+    private final TurnState turnState = new TurnState();
+    private SpellcastingFeature spellcastingFeature;
 
     public Character(
         String id,
@@ -129,6 +131,34 @@ public class Character {
         return baseAttackBonus + baseAttackBonusModifierStack.getTotal();
     }
 
+    public int getBaseAttackBonusRaw() {
+        return baseAttackBonus;
+    }
+
+    public int getBaseHitPoints() {
+        return baseHitPoints;
+    }
+
+    public int getBaseAttribute(StatType type) {
+        Attribute attr = attributes.get(type);
+        if (attr == null) {
+            throw new IllegalArgumentException("Invalid attribute type: " + type);
+        }
+        return attr.getBaseScore();
+    }
+
+    public int getBaseSave(StatType type) {
+        DerivedStat save = saves.get(type);
+        if (save == null) {
+            throw new IllegalArgumentException("Invalid saving throw type: " + type);
+        }
+        return save.getBaseValue();
+    }
+
+    public int getCurrentDamage() {
+        return currentDamage;
+    }
+
     public int getArmorClass() {
         return armorClass.getValue(getAttributeModifier(StatType.DEXTERITY));
     }
@@ -155,6 +185,29 @@ public class Character {
 
     public List<Condition> getActiveConditions() {
         return List.copyOf(activeConditions);
+    }
+
+    public TurnState getTurnState() {
+        return turnState;
+    }
+
+    public SpellcastingFeature getSpellcastingFeature() {
+        return spellcastingFeature;
+    }
+
+    public void setSpellcastingFeature(SpellcastingFeature spellcastingFeature) {
+        this.spellcastingFeature = spellcastingFeature;
+    }
+
+    /**
+     * Dynamically calculates the spell save DC for a spell level based on the character's current attributes.
+     */
+    public int getSpellSaveDC(int spellLevel) {
+        if (spellcastingFeature == null) {
+            throw new IllegalStateException("Character has no spellcasting feature configured");
+        }
+        int modifier = getAttributeModifier(spellcastingFeature.getCastingAttribute());
+        return spellcastingFeature.calculateSaveDC(spellLevel, modifier);
     }
 
     // --- Damage / Healing logic ---

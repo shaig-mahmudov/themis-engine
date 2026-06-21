@@ -56,7 +56,13 @@ public record CharacterResponseDto(
             .collect(Collectors.toList());
 
         List<ActiveConditionDto> conditions = c.getActiveConditions().stream()
-            .map(cond -> new ActiveConditionDto(cond.id(), cond.name(), cond.modifiers()))
+            .map(cond -> new ActiveConditionDto(
+                cond.id(),
+                cond.name(),
+                cond.modifiers(),
+                cond.durationRounds(),
+                cond.stackingGroup()
+            ))
             .collect(Collectors.toList());
 
         SpellcastingDto spellcastingDto = null;
@@ -110,7 +116,13 @@ public record CharacterResponseDto(
         int criticalThreatMin,
         int criticalMultiplier
     ) {}
-    public record ActiveConditionDto(String id, String name, Map<StatType, List<com.themis.engine.domain.Modifier>> modifiers) {}
+    public record ActiveConditionDto(
+        String id,
+        String name,
+        Map<StatType, List<com.themis.engine.domain.Modifier>> modifiers,
+        Integer durationRounds,
+        String stackingGroup
+    ) {}
     public record SpellcastingDto(int casterLevel, String castingAttribute, int[] maxSlots, int[] remainingSlots) {}
     public record TurnStateDto(boolean standardUsed, boolean moveUsed, boolean swiftUsed) {}
 }

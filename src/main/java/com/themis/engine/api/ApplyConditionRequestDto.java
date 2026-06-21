@@ -17,9 +17,13 @@ public record ApplyConditionRequestDto(
     @NotBlank(message = "Condition Name cannot be blank")
     String name,
 
-    Map<StatType, List<Modifier>> modifiers
+    Map<StatType, List<Modifier>> modifiers,
+
+    Integer durationRounds,
+
+    String stackingGroup
 ) {
     public Condition toDomain() {
-        return new Condition(id, name, modifiers);
+        return new Condition(id, name, modifiers, durationRounds, stackingGroup);
     }
 }

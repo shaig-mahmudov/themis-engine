@@ -102,4 +102,23 @@ public class CharacterController {
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
+
+    @PostMapping("/{id}/start-turn")
+    public ResponseEntity<CharacterResponseDto> startTurn(@PathVariable String id) {
+        return characterService.startTurn(id)
+            .map(CharacterResponseDto::fromDomain)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/consume-action")
+    public ResponseEntity<CharacterResponseDto> consumeAction(
+        @PathVariable String id,
+        @RequestParam com.themis.engine.domain.ActionType type
+    ) {
+        return characterService.consumeAction(id, type)
+            .map(CharacterResponseDto::fromDomain)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
 }

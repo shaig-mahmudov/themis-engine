@@ -93,4 +93,21 @@ public class CharacterService {
             return characterStore.save(c);
         });
     }
+
+    public Optional<Character> startTurn(String id) {
+        return characterStore.findById(id).map(c -> {
+            c.startTurn();
+            return characterStore.save(c);
+        });
+    }
+
+    public Optional<Character> consumeAction(String id, ActionType actionType) {
+        if (actionType == null) {
+            throw new IllegalArgumentException("Action type cannot be null");
+        }
+        return characterStore.findById(id).map(c -> {
+            c.getTurnState().consume(actionType);
+            return characterStore.save(c);
+        });
+    }
 }

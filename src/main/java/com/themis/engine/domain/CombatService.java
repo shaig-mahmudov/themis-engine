@@ -52,6 +52,11 @@ public class CombatService {
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Weapon " + weaponId + " is not equipped on attacker " + attackerId));
 
+        if (!attacker.getTurnState().canConsume(ActionType.STANDARD)) {
+            throw new IllegalStateException("Cannot attack: standard action already consumed in current turn");
+        }
+        attacker.getTurnState().consume(ActionType.STANDARD);
+
         int roll = d20Roll != null ? d20Roll : random.nextInt(1, 21);
 
         AttackResult result = ruleEngine.resolveAttack(attacker, weapon, target, roll, random);

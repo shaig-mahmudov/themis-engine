@@ -76,6 +76,10 @@ public class CharacterEntity {
     @JoinColumn(name = "character_id")
     private List<CharacterActiveConditionEntity> activeConditions = new ArrayList<>();
 
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "character_id")
+    private List<CharacterEquippedWeaponEntity> equippedWeapons = new ArrayList<>();
+
     public CharacterEntity() {}
 
     // Getters and Setters
@@ -245,5 +249,13 @@ public class CharacterEntity {
 
     public void setActiveConditions(List<CharacterActiveConditionEntity> activeConditions) {
         this.activeConditions = activeConditions;
+    }
+
+    public List<CharacterEquippedWeaponEntity> getEquippedWeapons() {
+        return equippedWeapons;
+    }
+
+    public void setEquippedWeapons(List<CharacterEquippedWeaponEntity> equippedWeapons) {
+        this.equippedWeapons = equippedWeapons;
     }
 }

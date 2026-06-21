@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.themis.engine.domain.Character;
 import com.themis.engine.domain.*;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class PostgresCharacterRepositoryAdapter implements CharacterStore {
 
     @Override
     @Transactional
+    @CachePut(value = "characters", key = "#character.id")
     public Character save(Character character) {
         if (character == null) {
             throw new IllegalArgumentException("Character cannot be null");
@@ -38,6 +41,7 @@ public class PostgresCharacterRepositoryAdapter implements CharacterStore {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "characters", key = "#id")
     public Optional<Character> findById(String id) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("ID cannot be null or blank");
@@ -106,6 +110,26 @@ public class PostgresCharacterRepositoryAdapter implements CharacterStore {
         }
         entity.getActiveConditions().addAll(conditionList);
 
+        // Map equipped weapons
+        List<CharacterEquippedWeaponEntity> equippedWeaponsList = new ArrayList<>();
+        for (Weapon weapon : domain.getEquippedWeapons()) {
+            try {
+                String json = objectMapper.writeValueAsString(weapon.modifiers());
+                equippedWeaponsList.add(new CharacterEquippedWeaponEntity(
+                    domain.getId(),
+                    weapon.id(),
+                    weapon.name(),
+                    json,
+                    weapon.damageRoll().toString(),
+                    weapon.criticalThreatMin(),
+                    weapon.criticalMultiplier()
+                ));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Failed to serialize weapon modifiers for: " + weapon.id(), e);
+            }
+        }
+        entity.getEquippedWeapons().addAll(equippedWeaponsList);
+
         return entity;
     }
 
@@ -150,6 +174,25 @@ public class PostgresCharacterRepositoryAdapter implements CharacterStore {
                 domain.applyCondition(cond);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to deserialize condition modifiers for: " + condEntity.getConditionId(), e);
+            }
+        }
+
+        // Equip weapons back
+        for (CharacterEquippedWeaponEntity weaponEntity : entity.getEquippedWeapons()) {
+            try {
+                Map<StatType, List<Modifier>> modifiers = objectMapper.readValue(weaponEntity.getModifiersJson(), modifiersMapType);
+                DiceRoll damageRoll = DiceRoll.parse(weaponEntity.getDamageRoll());
+                Weapon weapon = new Weapon(
+                    weaponEntity.getWeaponId(),
+                    weaponEntity.getName(),
+                    modifiers,
+                    damageRoll,
+                    weaponEntity.getCriticalThreatMin(),
+                    weaponEntity.getCriticalMultiplier()
+                );
+                domain.equipWeapon(weapon);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to deserialize weapon modifiers for: " + weaponEntity.getWeaponId(), e);
             }
         }
 

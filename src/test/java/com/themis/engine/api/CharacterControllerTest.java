@@ -41,6 +41,7 @@ class CharacterControllerTest {
         );
 
         mockMvc.perform(post("/api/characters")
+                .header("X-API-KEY", "default-dev-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -50,7 +51,8 @@ class CharacterControllerTest {
                 .andExpect(jsonPath("$.maxHitPoints").value(30)) // 24 + (CON mod 2 * lvl 3) = 30
                 .andExpect(jsonPath("$.currentHitPoints").value(30));
 
-        mockMvc.perform(get("/api/characters/test-char-1"))
+        mockMvc.perform(get("/api/characters/test-char-1")
+                .header("X-API-KEY", "default-dev-key"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Valeros"))
                 .andExpect(jsonPath("$.attributes.STRENGTH.score").value(16))
@@ -68,6 +70,7 @@ class CharacterControllerTest {
             16, 1, 3, 0, 3
         );
         mockMvc.perform(post("/api/characters")
+                .header("X-API-KEY", "default-dev-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
@@ -79,6 +82,7 @@ class CharacterControllerTest {
             Map.of(StatType.ARMOR_CLASS, List.of(new Modifier(1, ModifierType.DEFLECTION, "Ring")))
         );
         mockMvc.perform(post("/api/characters/test-char-2/equip-item")
+                .header("X-API-KEY", "default-dev-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(ring)))
                 .andExpect(status().isOk())
@@ -91,6 +95,7 @@ class CharacterControllerTest {
             Map.of(StatType.WILL, List.of(new Modifier(-2, ModifierType.UNTYPED, "Fear")))
         );
         mockMvc.perform(post("/api/characters/test-char-2/apply-condition")
+                .header("X-API-KEY", "default-dev-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(shaken)))
                 .andExpect(status().isOk())
@@ -109,6 +114,7 @@ class CharacterControllerTest {
         );
 
         mockMvc.perform(post("/api/characters")
+                .header("X-API-KEY", "default-dev-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -130,6 +136,7 @@ class CharacterControllerTest {
         );
 
         mockMvc.perform(post("/api/characters/test-char-2/equip-weapon")
+                .header("X-API-KEY", "default-dev-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -138,7 +145,8 @@ class CharacterControllerTest {
 
     @Test
     void testDamageCharacter_ValidationFailed() throws Exception {
-        mockMvc.perform(post("/api/characters/test-char-2/damage?amount=-5"))
+        mockMvc.perform(post("/api/characters/test-char-2/damage?amount=-5")
+                .header("X-API-KEY", "default-dev-key"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value("Damage amount cannot be negative"));

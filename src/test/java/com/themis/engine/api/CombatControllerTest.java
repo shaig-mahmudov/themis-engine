@@ -65,6 +65,7 @@ class CombatControllerTest {
         );
 
         mockMvc.perform(post("/api/combat/attack")
+                .header("X-API-KEY", "default-dev-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(attackReq)))
                 .andExpect(status().isOk())
@@ -105,24 +106,28 @@ class CombatControllerTest {
 
         // First attack succeeds
         mockMvc.perform(post("/api/combat/attack")
+                .header("X-API-KEY", "default-dev-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(attackReq)))
                 .andExpect(status().isOk());
 
         // Second attack fails because standard action is already used
         mockMvc.perform(post("/api/combat/attack")
+                .header("X-API-KEY", "default-dev-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(attackReq)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Cannot attack: standard action already consumed in current turn"));
 
         // Reset turn state via start-turn endpoint
-        mockMvc.perform(post("/api/characters/attacker-id-2/start-turn"))
+        mockMvc.perform(post("/api/characters/attacker-id-2/start-turn")
+                .header("X-API-KEY", "default-dev-key"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.turnState.standardUsed").value(false));
 
         // Third attack now succeeds again
         mockMvc.perform(post("/api/combat/attack")
+                .header("X-API-KEY", "default-dev-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(attackReq)))
                 .andExpect(status().isOk());

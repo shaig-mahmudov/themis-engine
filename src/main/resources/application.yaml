@@ -16,3 +16,12 @@ spring:
     baseline-on-migrate: true
   cache:
     type: ${SPRING_CACHE_TYPE:redis}
+
+themis:
+  api-key: ${THEMIS_API_KEY:default-dev-key}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus

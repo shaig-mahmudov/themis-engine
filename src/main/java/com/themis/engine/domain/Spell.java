@@ -8,7 +8,7 @@ public record Spell(
     String name,
     int level,
     ActionType actionCost
-) {
+) implements java.io.Serializable {
     public Spell {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("Spell ID cannot be null or blank");

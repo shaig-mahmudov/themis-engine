@@ -14,7 +14,9 @@ package com.themis.engine.domain;
  * - Consuming a full-round action consumes both standard and move actions.
  * - A standard action can be traded (downgraded) for an extra move action.
  */
-public class TurnState {
+public class TurnState implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
+
     private boolean standardUsed;
     private boolean moveUsed;
     private boolean swiftUsed;

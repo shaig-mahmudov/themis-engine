@@ -9,7 +9,8 @@ import java.util.Map;
  * The primary Aggregate Root representing a Pathfinder 1e character.
  * Automates statistics calculations by integrating the Modifier Stacking Engine.
  */
-public class Character {
+public class Character implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
     private final String id;
     private final String name;
     private final int level;
@@ -29,6 +30,7 @@ public class Character {
     // State
     private int currentDamage = 0;
     private final List<EquippableItem> equippedItems = new ArrayList<>();
+    private final List<Weapon> equippedWeapons = new ArrayList<>();
     private final List<Condition> activeConditions = new ArrayList<>();
     private final TurnState turnState = new TurnState();
     private SpellcastingFeature spellcastingFeature;
@@ -183,6 +185,10 @@ public class Character {
         return List.copyOf(equippedItems);
     }
 
+    public List<Weapon> getEquippedWeapons() {
+        return List.copyOf(equippedWeapons);
+    }
+
     public List<Condition> getActiveConditions() {
         return List.copyOf(activeConditions);
     }
@@ -256,6 +262,26 @@ public class Character {
         }
         if (equippedItems.remove(item)) {
             removeModifiers(item.modifiers());
+        }
+    }
+
+    public void equipWeapon(Weapon weapon) {
+        if (weapon == null) {
+            throw new IllegalArgumentException("Cannot equip null weapon");
+        }
+        if (equippedWeapons.contains(weapon)) {
+            return;
+        }
+        equippedWeapons.add(weapon);
+        applyModifiers(weapon.modifiers());
+    }
+
+    public void unequipWeapon(Weapon weapon) {
+        if (weapon == null) {
+            throw new IllegalArgumentException("Cannot unequip null weapon");
+        }
+        if (equippedWeapons.remove(weapon)) {
+            removeModifiers(weapon.modifiers());
         }
     }
 

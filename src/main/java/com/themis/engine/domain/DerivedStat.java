@@ -4,7 +4,9 @@ package com.themis.engine.domain;
  * Represents a derived statistic (e.g., Armor Class, Saving Throws).
  * Combines a base value, a key attribute modifier, and dynamic modifiers.
  */
-public class DerivedStat {
+public class DerivedStat implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final int baseValue;
     private final ModifierStack modifierStack = new ModifierStack();
 

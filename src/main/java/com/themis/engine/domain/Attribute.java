@@ -4,7 +4,9 @@ package com.themis.engine.domain;
  * Represents a core ability score (e.g., Strength, Dexterity).
  * Manages its base value and active modifiers.
  */
-public class Attribute {
+public class Attribute implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final int baseScore;
     private final ModifierStack modifierStack = new ModifierStack();
 

@@ -9,7 +9,9 @@ import java.util.stream.Collectors;
  * Manages a stack of active modifiers and resolves their total value
  * based on Pathfinder 1e stacking rules.
  */
-public class ModifierStack {
+public class ModifierStack implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final List<Modifier> modifiers = new ArrayList<>();
 
     /**

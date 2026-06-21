@@ -6,7 +6,9 @@ import java.util.Arrays;
  * Tracks a character's spellcasting abilities, including spell slots per level
  * and calculating save DCs based on their casting attribute.
  */
-public class SpellcastingFeature {
+public class SpellcastingFeature implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final int casterLevel;
     private final StatType castingAttribute;
     

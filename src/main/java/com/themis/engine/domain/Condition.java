@@ -10,7 +10,7 @@ public record Condition(
     String id,
     String name,
     Map<StatType, List<Modifier>> modifiers
-) {
+) implements java.io.Serializable {
     public Condition {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("Condition id cannot be null or blank");

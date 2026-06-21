@@ -10,7 +10,7 @@ public record EquippableItem(
     String id,
     String name,
     Map<StatType, List<Modifier>> modifiers
-) {
+) implements java.io.Serializable {
     public EquippableItem {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("Item id cannot be null or blank");

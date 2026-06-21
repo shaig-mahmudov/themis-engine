@@ -2,17 +2,17 @@ spring:
   application:
     name: themis-engine
   datasource:
-    url: jdbc:postgresql://localhost:5432/themis_db
-    username: postgres
-    password: password
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/themis_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    show-sql: ${SPRING_JPA_SHOW_SQL:false}
   flyway:
     enabled: true
     baseline-on-migrate: true
   cache:
-    type: redis
+    type: ${SPRING_CACHE_TYPE:redis}

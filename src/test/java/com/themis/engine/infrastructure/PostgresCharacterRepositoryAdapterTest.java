@@ -74,6 +74,7 @@ class PostgresCharacterRepositoryAdapterTest {
         Weapon masterworkDagger = new Weapon(
             "mwk-dagger",
             "Masterwork Dagger",
+            WeaponType.MELEE,
             Map.of(StatType.BASE_ATTACK_BONUS, List.of(new Modifier(1, ModifierType.ENHANCEMENT, "Masterwork"))),
             DiceRoll.parse("1d4"),
             19,

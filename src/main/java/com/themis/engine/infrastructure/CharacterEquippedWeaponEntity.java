@@ -28,12 +28,15 @@ public class CharacterEquippedWeaponEntity {
     @Column(name = "critical_multiplier")
     private int criticalMultiplier;
 
+    private String type;
+
     public CharacterEquippedWeaponEntity() {}
 
     public CharacterEquippedWeaponEntity(
         String characterId,
         String weaponId,
         String name,
+        String type,
         String modifiersJson,
         String damageRoll,
         int criticalThreatMin,
@@ -42,6 +45,7 @@ public class CharacterEquippedWeaponEntity {
         this.characterId = characterId;
         this.weaponId = weaponId;
         this.name = name;
+        this.type = type;
         this.modifiersJson = modifiersJson;
         this.damageRoll = damageRoll;
         this.criticalThreatMin = criticalThreatMin;
@@ -70,6 +74,14 @@ public class CharacterEquippedWeaponEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public String getModifiersJson() {

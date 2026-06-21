@@ -1,0 +1,1 @@
+ALTER TABLE character_equipped_weapons ADD COLUMN type VARCHAR(50) NOT NULL DEFAULT 'MELEE';

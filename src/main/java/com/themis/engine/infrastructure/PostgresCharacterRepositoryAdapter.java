@@ -119,6 +119,7 @@ public class PostgresCharacterRepositoryAdapter implements CharacterStore {
                     domain.getId(),
                     weapon.id(),
                     weapon.name(),
+                    weapon.type().name(),
                     json,
                     weapon.damageRoll().toString(),
                     weapon.criticalThreatMin(),
@@ -182,9 +183,11 @@ public class PostgresCharacterRepositoryAdapter implements CharacterStore {
             try {
                 Map<StatType, List<Modifier>> modifiers = objectMapper.readValue(weaponEntity.getModifiersJson(), modifiersMapType);
                 DiceRoll damageRoll = DiceRoll.parse(weaponEntity.getDamageRoll());
+                WeaponType weaponType = weaponEntity.getType() == null ? WeaponType.MELEE : WeaponType.valueOf(weaponEntity.getType());
                 Weapon weapon = new Weapon(
                     weaponEntity.getWeaponId(),
                     weaponEntity.getName(),
+                    weaponType,
                     modifiers,
                     damageRoll,
                     weaponEntity.getCriticalThreatMin(),

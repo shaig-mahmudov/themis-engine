@@ -69,6 +69,10 @@ public class PostgresCharacterRepositoryAdapter implements CharacterStore {
         entity.setBaseWill(domain.getBaseSave(StatType.WILL));
         
         entity.setCurrentDamage(domain.getCurrentDamage());
+        
+        entity.setStandardUsed(domain.getTurnState().isStandardUsed());
+        entity.setMoveUsed(domain.getTurnState().isMoveUsed());
+        entity.setSwiftUsed(domain.getTurnState().isSwiftUsed());
 
         // Map spellcasting if exists
         if (domain.getSpellcastingFeature() != null) {
@@ -103,7 +107,14 @@ public class PostgresCharacterRepositoryAdapter implements CharacterStore {
         for (Condition cond : domain.getActiveConditions()) {
             try {
                 String json = objectMapper.writeValueAsString(cond.modifiers());
-                conditionList.add(new CharacterActiveConditionEntity(domain.getId(), cond.id(), cond.name(), json));
+                conditionList.add(new CharacterActiveConditionEntity(
+                    domain.getId(),
+                    cond.id(),
+                    cond.name(),
+                    json,
+                    cond.durationRounds(),
+                    cond.stackingGroup()
+                ));
             } catch (JsonProcessingException e) {
                 throw new RuntimeException("Failed to serialize condition modifiers for: " + cond.id(), e);
             }
@@ -171,7 +182,13 @@ public class PostgresCharacterRepositoryAdapter implements CharacterStore {
         for (CharacterActiveConditionEntity condEntity : entity.getActiveConditions()) {
             try {
                 Map<StatType, List<Modifier>> modifiers = objectMapper.readValue(condEntity.getModifiersJson(), modifiersMapType);
-                Condition cond = new Condition(condEntity.getConditionId(), condEntity.getName(), modifiers);
+                Condition cond = new Condition(
+                    condEntity.getConditionId(),
+                    condEntity.getName(),
+                    modifiers,
+                    condEntity.getDurationRounds(),
+                    condEntity.getStackingGroup()
+                );
                 domain.applyCondition(cond);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to deserialize condition modifiers for: " + condEntity.getConditionId(), e);
@@ -217,6 +234,9 @@ public class PostgresCharacterRepositoryAdapter implements CharacterStore {
         if (entity.getCurrentDamage() > 0) {
             domain.damage(entity.getCurrentDamage());
         }
+
+        // Restore turn state
+        domain.getTurnState().restore(entity.isStandardUsed(), entity.isMoveUsed(), entity.isSwiftUsed());
 
         return domain;
     }

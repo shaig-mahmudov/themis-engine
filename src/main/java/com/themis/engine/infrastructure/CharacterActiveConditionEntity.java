@@ -19,13 +19,21 @@ public class CharacterActiveConditionEntity {
     @Column(name = "modifiers_json", columnDefinition = "TEXT")
     private String modifiersJson;
 
+    @Column(name = "duration_rounds")
+    private Integer durationRounds;
+
+    @Column(name = "stacking_group")
+    private String stackingGroup;
+
     public CharacterActiveConditionEntity() {}
 
-    public CharacterActiveConditionEntity(String characterId, String conditionId, String name, String modifiersJson) {
+    public CharacterActiveConditionEntity(String characterId, String conditionId, String name, String modifiersJson, Integer durationRounds, String stackingGroup) {
         this.characterId = characterId;
         this.conditionId = conditionId;
         this.name = name;
         this.modifiersJson = modifiersJson;
+        this.durationRounds = durationRounds;
+        this.stackingGroup = stackingGroup;
     }
 
     public String getCharacterId() {
@@ -58,5 +66,21 @@ public class CharacterActiveConditionEntity {
 
     public void setModifiersJson(String modifiersJson) {
         this.modifiersJson = modifiersJson;
+    }
+
+    public Integer getDurationRounds() {
+        return durationRounds;
+    }
+
+    public void setDurationRounds(Integer durationRounds) {
+        this.durationRounds = durationRounds;
+    }
+
+    public String getStackingGroup() {
+        return stackingGroup;
+    }
+
+    public void setStackingGroup(String stackingGroup) {
+        this.stackingGroup = stackingGroup;
     }
 }

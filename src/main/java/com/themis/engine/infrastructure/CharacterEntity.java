@@ -3,6 +3,8 @@ package com.themis.engine.infrastructure;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.LinkedHashSet;
 
 @Entity
 @Table(name = "characters")
@@ -70,15 +72,24 @@ public class CharacterEntity {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "character_id")
-    private List<CharacterEquippedItemEntity> equippedItems = new ArrayList<>();
+    private Set<CharacterEquippedItemEntity> equippedItems = new LinkedHashSet<>();
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "character_id")
-    private List<CharacterActiveConditionEntity> activeConditions = new ArrayList<>();
+    private Set<CharacterActiveConditionEntity> activeConditions = new LinkedHashSet<>();
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "character_id")
-    private List<CharacterEquippedWeaponEntity> equippedWeapons = new ArrayList<>();
+    private Set<CharacterEquippedWeaponEntity> equippedWeapons = new LinkedHashSet<>();
+
+    @Column(name = "standard_used", nullable = false)
+    private boolean standardUsed;
+
+    @Column(name = "move_used", nullable = false)
+    private boolean moveUsed;
+
+    @Column(name = "swift_used", nullable = false)
+    private boolean swiftUsed;
 
     public CharacterEntity() {}
 
@@ -235,27 +246,51 @@ public class CharacterEntity {
         this.spellcastingRemainingSlots = spellcastingRemainingSlots;
     }
 
-    public List<CharacterEquippedItemEntity> getEquippedItems() {
+    public Set<CharacterEquippedItemEntity> getEquippedItems() {
         return equippedItems;
     }
 
-    public void setEquippedItems(List<CharacterEquippedItemEntity> equippedItems) {
+    public void setEquippedItems(Set<CharacterEquippedItemEntity> equippedItems) {
         this.equippedItems = equippedItems;
     }
 
-    public List<CharacterActiveConditionEntity> getActiveConditions() {
+    public Set<CharacterActiveConditionEntity> getActiveConditions() {
         return activeConditions;
     }
 
-    public void setActiveConditions(List<CharacterActiveConditionEntity> activeConditions) {
+    public void setActiveConditions(Set<CharacterActiveConditionEntity> activeConditions) {
         this.activeConditions = activeConditions;
     }
 
-    public List<CharacterEquippedWeaponEntity> getEquippedWeapons() {
+    public Set<CharacterEquippedWeaponEntity> getEquippedWeapons() {
         return equippedWeapons;
     }
 
-    public void setEquippedWeapons(List<CharacterEquippedWeaponEntity> equippedWeapons) {
+    public void setEquippedWeapons(Set<CharacterEquippedWeaponEntity> equippedWeapons) {
         this.equippedWeapons = equippedWeapons;
+    }
+
+    public boolean isStandardUsed() {
+        return standardUsed;
+    }
+
+    public void setStandardUsed(boolean standardUsed) {
+        this.standardUsed = standardUsed;
+    }
+
+    public boolean isMoveUsed() {
+        return moveUsed;
+    }
+
+    public void setMoveUsed(boolean moveUsed) {
+        this.moveUsed = moveUsed;
+    }
+
+    public boolean isSwiftUsed() {
+        return swiftUsed;
+    }
+
+    public void setSwiftUsed(boolean swiftUsed) {
+        this.swiftUsed = swiftUsed;
     }
 }

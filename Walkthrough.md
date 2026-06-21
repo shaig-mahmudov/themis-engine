@@ -4,6 +4,25 @@ This document tracks completed implementation phases for **Themis Engine**.
 
 ---
 
+## Phase 8: Encounter Management (Completed)
+
+We have successfully implemented turn-based combat Grouping/Encounter management. The tracker organizes characters, rolls initiative dynamically (with server and client inputs), handles rounds and turn sequencing, and resets participant action economy on turn-start.
+
+### 1. Domain Design & Generic Combatants
+* **Generic Combatants**: Decoupled the initiative tracker from the `Character` class using `EncounterParticipant` record with a `combatantType` (`CHARACTER`, `LAIR_ACTION`, `ENVIRONMENT`) to support arbitrary non-character combatants in the future.
+* **Initiative Sorting & Tie-Breakers**: Implemented sorting logic in `Encounter.java` that orders participants descending by initiative total. Ties are resolved by Dexterity modifier descending, and finally by combatant ID.
+* **Round & Turn Sequencer**: Advancing the active participant index automatically wraps around and increments the current round index.
+
+### 2. Hybrid Initiative & Turn Reset
+* **Hybrid Initiative**: Allowed the API to pass manual initiative rolls (to support physical dice inputs), while automatically rolling 1d20 + Dexterity modifier for any participants missing manual inputs.
+* **Automatic Turn Actions Reset**: Advancing the encounter's turn to a `CHARACTER` automatically triggers `character.startTurn()`, resetting standard/move/swift action availability and ticking active condition durations.
+
+### 3. API & Database Persistence
+* **Database Schema**: Created Flyway migration `V5` mapping `encounters` and `encounter_participants` tables with ordering indexes to preserve list order.
+* **REST Endpoints**: Exposed endpoints under `/api/encounters` to create encounters, add participants, start combat, step to the next turn, and end encounters.
+
+---
+
 ## Phase 7: Productionization, Security, and Observability (Completed)
 
 We have successfully implemented the productionization scaffolding to secure the API, rate limit traffic, expose health checks, log in structured JSON, and package the application with Docker and GitHub Actions.
@@ -34,7 +53,7 @@ We have successfully implemented the Pathfinder 1e Action Economy flow, extended
 
 ### 1. Action Economy Flow
 * **Turn Reset and Action Consumption**: Added `startTurn()` to [Character.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/domain/Character.java) which resets `TurnState` actions and handles ticking down condition durations.
-* **REST Endpoints**: Exposed `POST /api/characters/{id}/start-turn` and `POST /api/characters/{id}/consume-action` in [CharacterController.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/api/CharacterController.java) to reset a turn's action economy and manually consume actions (Standard, Move, Swift, etc.) on the server.
+* **REST Endpoints**: Exposed `POST /api/characters/{id}/start-turn` and `POST /api/characters/{id}/consume-action` in [CharacterController.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/api/CharacterController.java) to reset a turn's action economy and manually consume actions (Standard, Move, Swift, etc.) on the server.
 * **Attack Checks**: Integrated TurnState checks in [CombatService.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/domain/CombatService.java) to verify that an attacker has their standard action available before executing an attack, and consume it upon success.
 
 ### 2. Advanced Conditions & Stacking Rules
@@ -186,7 +205,7 @@ Enforces stacking rules for modifiers in Pathfinder 1e.
 ## Global Verification Results
 
 We executed the full test suite using `mvn test`:
-* **Total Tests Run:** 55
+* **Total Tests Run:** 62
 * **Failures / Errors:** 0
 * **Skipped (Spring Testcontainers Integration Test):** 1 (requires Docker environment)
-* **All 54 unit and integration tests passed successfully!**
+* **All 61 unit and integration tests passed successfully!**

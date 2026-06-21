@@ -70,6 +70,17 @@ class PostgresCharacterRepositoryAdapterTest {
         );
         original.applyCondition(fatigued);
 
+        // Equip a weapon (Masterwork Dagger: +1 Enhancement to BAB, 1d4 damage, Threat 19, Mult 2)
+        Weapon masterworkDagger = new Weapon(
+            "mwk-dagger",
+            "Masterwork Dagger",
+            Map.of(StatType.BASE_ATTACK_BONUS, List.of(new Modifier(1, ModifierType.ENHANCEMENT, "Masterwork"))),
+            DiceRoll.parse("1d4"),
+            19,
+            2
+        );
+        original.equipWeapon(masterworkDagger);
+
         // 4. Configure spellcasting
         SpellcastingFeature sf = new SpellcastingFeature(5, StatType.INTELLIGENCE);
         sf.setMaxSlots(1, 4);
@@ -88,6 +99,8 @@ class PostgresCharacterRepositoryAdapterTest {
         assertEquals(16, original.getSpellSaveDC(1));
         // STR: Base 10 + Fatigued -2 = 8
         assertEquals(8, original.getAttributeScore(StatType.STRENGTH));
+        // BAB: Base 2 + Weapon Enhancement 1 = 3
+        assertEquals(3, original.getBaseAttackBonus());
         // Max HP: 30 + (Level 5 * CON Mod 1) = 35. Current HP: 35 - 10 = 25
         assertEquals(35, original.getMaxHitPoints());
         assertEquals(25, original.getCurrentHitPoints());
@@ -132,5 +145,15 @@ class PostgresCharacterRepositoryAdapterTest {
         // Active inventory / condition lists
         assertEquals(2, loaded.getEquippedItems().size());
         assertEquals(1, loaded.getActiveConditions().size());
+        assertEquals(1, loaded.getEquippedWeapons().size());
+
+        Weapon loadedWeapon = loaded.getEquippedWeapons().get(0);
+        assertEquals("mwk-dagger", loadedWeapon.id());
+        assertEquals("Masterwork Dagger", loadedWeapon.name());
+        assertEquals(19, loadedWeapon.criticalThreatMin());
+        assertEquals(2, loadedWeapon.criticalMultiplier());
+        assertEquals("1d4", loadedWeapon.damageRoll().toString());
+        // Verify weapon enhancement modifier on loaded BAB
+        assertEquals(3, loaded.getBaseAttackBonus());
     }
 }

@@ -1,0 +1,99 @@
+package com.themis.engine.api;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.themis.engine.domain.*;
+import com.themis.engine.domain.Character;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Map;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@Transactional
+class CharacterControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    void testCreateCharacterAndGet() throws Exception {
+        CharacterRequestDto request = new CharacterRequestDto(
+            "test-char-1",
+            "Valeros",
+            3,
+            16, 12, 14, 10, 10, 10,
+            24, 3, 3, 1, 1
+        );
+
+        mockMvc.perform(post("/api/characters")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("test-char-1"))
+                .andExpect(jsonPath("$.name").value("Valeros"))
+                .andExpect(jsonPath("$.level").value(3))
+                .andExpect(jsonPath("$.maxHitPoints").value(30)) // 24 + (CON mod 2 * lvl 3) = 30
+                .andExpect(jsonPath("$.currentHitPoints").value(30));
+
+        mockMvc.perform(get("/api/characters/test-char-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Valeros"))
+                .andExpect(jsonPath("$.attributes.STRENGTH.score").value(16))
+                .andExpect(jsonPath("$.attributes.STRENGTH.modifier").value(3));
+    }
+
+    @Test
+    void testEquipItemAndCondition() throws Exception {
+        // 1. Create character
+        CharacterRequestDto request = new CharacterRequestDto(
+            "test-char-2",
+            "Kyra",
+            2,
+            12, 10, 12, 10, 16, 14,
+            16, 1, 3, 0, 3
+        );
+        mockMvc.perform(post("/api/characters")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        // 2. Equip item
+        EquippableItem ring = new EquippableItem(
+            "ring-protection-1",
+            "Ring of Protection +1",
+            Map.of(StatType.ARMOR_CLASS, List.of(new Modifier(1, ModifierType.DEFLECTION, "Ring")))
+        );
+        mockMvc.perform(post("/api/characters/test-char-2/equip-item")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(ring)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.armorClass").value(11)); // Base 10 + Dex 0 + Ring 1 = 11
+
+        // 3. Apply condition
+        Condition shaken = new Condition(
+            "shaken-cond",
+            "Shaken",
+            Map.of(StatType.WILL, List.of(new Modifier(-2, ModifierType.UNTYPED, "Fear")))
+        );
+        mockMvc.perform(post("/api/characters/test-char-2/apply-condition")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(shaken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.willSave").value(4)); // Base 3 + Wis 3 - Shaken 2 = 4
+    }
+}

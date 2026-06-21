@@ -47,27 +47,54 @@ public class ModifierStack implements java.io.Serializable {
             return 0;
         }
 
-        Map<ModifierType, List<Modifier>> grouped = modifiers.stream()
+        Map<ModifierType, List<Modifier>> groupedByType = modifiers.stream()
                 .collect(Collectors.groupingBy(Modifier::type));
 
         int total = 0;
 
-        for (Map.Entry<ModifierType, List<Modifier>> entry : grouped.entrySet()) {
+        for (Map.Entry<ModifierType, List<Modifier>> entry : groupedByType.entrySet()) {
             ModifierType type = entry.getKey();
             List<Modifier> mods = entry.getValue();
 
-            if (type.isStackable()) {
-                total += mods.stream().mapToInt(Modifier::value).sum();
-            } else {
-                int maxBonus = mods.stream()
+            // Group by source within this modifier type to prevent identical sources from stacking
+            Map<String, List<Modifier>> groupedBySource = mods.stream()
+                    .collect(Collectors.groupingBy(Modifier::source));
+
+            List<Integer> resolvedPositiveBonuses = new java.util.ArrayList<>();
+            List<Integer> resolvedNegativePenalties = new java.util.ArrayList<>();
+
+            for (List<Modifier> sourceMods : groupedBySource.values()) {
+                int maxBonus = sourceMods.stream()
                         .filter(m -> m.value() > 0)
                         .mapToInt(Modifier::value)
                         .max()
                         .orElse(0);
 
-                int minPenalty = mods.stream()
+                int minPenalty = sourceMods.stream()
                         .filter(m -> m.value() < 0)
                         .mapToInt(Modifier::value)
+                        .min()
+                        .orElse(0);
+
+                if (maxBonus > 0) {
+                    resolvedPositiveBonuses.add(maxBonus);
+                }
+                if (minPenalty < 0) {
+                    resolvedNegativePenalties.add(minPenalty);
+                }
+            }
+
+            if (type.isStackable()) {
+                total += resolvedPositiveBonuses.stream().mapToInt(Integer::intValue).sum();
+                total += resolvedNegativePenalties.stream().mapToInt(Integer::intValue).sum();
+            } else {
+                int maxBonus = resolvedPositiveBonuses.stream()
+                        .mapToInt(Integer::intValue)
+                        .max()
+                        .orElse(0);
+
+                int minPenalty = resolvedNegativePenalties.stream()
+                        .mapToInt(Integer::intValue)
                         .min()
                         .orElse(0);
 

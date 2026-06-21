@@ -312,8 +312,52 @@ public class Character implements java.io.Serializable {
         if (condition == null) {
             throw new IllegalArgumentException("Cannot remove null condition");
         }
-        if (activeConditions.remove(condition)) {
-            removeModifiers(condition.modifiers());
+        Condition stored = activeConditions.stream()
+            .filter(c -> c.id().equals(condition.id()))
+            .findFirst()
+            .orElse(null);
+            
+        if (stored != null && activeConditions.remove(stored)) {
+            removeModifiers(stored.modifiers());
+        }
+    }
+
+    /**
+     * Starts a new turn for the character. Resets the turn's action economy and
+     * decrements the duration of active conditions by 1 round.
+     */
+    public void startTurn() {
+        turnState.reset();
+        
+        List<Condition> toRemove = new ArrayList<>();
+        List<Condition> toUpdate = new ArrayList<>();
+        
+        for (Condition cond : activeConditions) {
+            if (cond.durationRounds() != null) {
+                int remaining = cond.durationRounds() - 1;
+                if (remaining <= 0) {
+                    toRemove.add(cond);
+                } else {
+                    toUpdate.add(cond.withDuration(remaining));
+                }
+            }
+        }
+        
+        for (Condition cond : toRemove) {
+            removeCondition(cond);
+        }
+        
+        for (Condition updated : toUpdate) {
+            int index = -1;
+            for (int i = 0; i < activeConditions.size(); i++) {
+                if (activeConditions.get(i).id().equals(updated.id())) {
+                    index = i;
+                    break;
+                }
+            }
+            if (index != -1) {
+                activeConditions.set(index, updated);
+            }
         }
     }
 

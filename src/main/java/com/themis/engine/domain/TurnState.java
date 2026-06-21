@@ -34,6 +34,15 @@ public class TurnState implements java.io.Serializable {
         this.swiftUsed = false;
     }
 
+    /**
+     * Restores the turn state directly from persisted values.
+     */
+    public void restore(boolean standardUsed, boolean moveUsed, boolean swiftUsed) {
+        this.standardUsed = standardUsed;
+        this.moveUsed = moveUsed;
+        this.swiftUsed = swiftUsed;
+    }
+
     public boolean isStandardUsed() {
         return standardUsed;
     }

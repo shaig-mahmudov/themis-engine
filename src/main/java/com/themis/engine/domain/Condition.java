@@ -10,8 +10,14 @@ import java.util.HashMap;
 public record Condition(
     String id,
     String name,
-    Map<StatType, List<Modifier>> modifiers
+    Map<StatType, List<Modifier>> modifiers,
+    Integer durationRounds,
+    String stackingGroup
 ) implements java.io.Serializable {
+    public Condition(String id, String name, Map<StatType, List<Modifier>> modifiers) {
+        this(id, name, modifiers, null, null);
+    }
+
     public Condition {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("Condition id cannot be null or blank");
@@ -21,11 +27,17 @@ public record Condition(
         }
         
         // Deep copy the map structure to ensure lists are also immutable
-        Map<StatType, List<Modifier>> tempModifiers = new HashMap<>();
+        // Also normalize modifier sources to match stackingGroup or name so stacking engine works correctly
+        Map<StatType, List<Modifier>> tempModifiers = new java.util.HashMap<>();
+        String effectiveSource = (stackingGroup != null && !stackingGroup.isBlank()) ? stackingGroup : name;
+        
         if (modifiers != null) {
             for (Map.Entry<StatType, List<Modifier>> entry : modifiers.entrySet()) {
                 if (entry.getValue() != null) {
-                    tempModifiers.put(entry.getKey(), List.copyOf(entry.getValue()));
+                    List<Modifier> normalizedModifiers = entry.getValue().stream()
+                        .map(m -> new Modifier(m.value(), m.type(), effectiveSource))
+                        .toList();
+                    tempModifiers.put(entry.getKey(), List.copyOf(normalizedModifiers));
                 }
             }
         }
@@ -39,5 +51,22 @@ public record Condition(
      */
     public List<Modifier> getModifiersFor(StatType statType) {
         return modifiers.getOrDefault(statType, List.of());
+    }
+
+    public Condition withDuration(Integer newDuration) {
+        return new Condition(id, name, modifiers, newDuration, stackingGroup);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Condition condition = (Condition) o;
+        return id.equals(condition.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
     }
 }

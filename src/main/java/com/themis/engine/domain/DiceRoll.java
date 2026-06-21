@@ -44,7 +44,11 @@ public record DiceRoll(int numberOfDice, int sides, int modifier) implements jav
     public int roll(IntSupplier dieSource) {
         int sum = 0;
         for (int i = 0; i < numberOfDice; i++) {
-            sum += dieSource.getAsInt();
+            int rollVal = dieSource.getAsInt();
+            if (rollVal < 1 || rollVal > sides) {
+                throw new IllegalArgumentException("Die roll value " + rollVal + " is out of bounds for a d" + sides);
+            }
+            sum += rollVal;
         }
         return sum + modifier;
     }

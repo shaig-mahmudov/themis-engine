@@ -1,16 +1,18 @@
 package com.themis.engine.domain;
 
+import org.springframework.stereotype.Service;
 import java.util.random.RandomGenerator;
 
 /**
  * A stateless domain service that acts as the combat referee in Pathfinder 1e rules.
  */
+@Service
 public class RuleEngine {
 
     /**
-     * Resolves a melee attack from an attacker against a target using a specific weapon.
+     * Resolves an attack from an attacker against a target using a specific weapon.
      * Enforces automatic hits (20), automatic misses (1), critical threat confirmation,
-     * strength scaling, and applying resolved damage.
+     * strength/dexterity scaling based on weapon type, and applying resolved damage.
      *
      * @param attacker     the attacking Character
      * @param weapon       the Weapon being used
@@ -33,7 +35,13 @@ public class RuleEngine {
             throw new IllegalArgumentException("d20 roll must be between 1 and 20");
         }
 
-        int attackBonus = attacker.getBaseAttackBonus() + attacker.getAttributeModifier(StatType.STRENGTH);
+        // Differentiate melee/ranged/finesse attack bonus scaling
+        StatType attackAttribute = switch (weapon.type()) {
+            case MELEE -> StatType.STRENGTH;
+            case RANGED, FINESSE -> StatType.DEXTERITY;
+        };
+
+        int attackBonus = attacker.getBaseAttackBonus() + attacker.getAttributeModifier(attackAttribute);
         int totalAttackRoll = d20Roll + attackBonus;
         int targetAc = target.getArmorClass();
 
@@ -67,10 +75,15 @@ public class RuleEngine {
 
         int multiplier = isCritical ? weapon.criticalMultiplier() : 1;
         int damageSum = 0;
-        int strMod = attacker.getAttributeModifier(StatType.STRENGTH);
+        
+        // Differentiate melee/ranged/finesse damage modifier scaling
+        int damageAttrBonus = switch (weapon.type()) {
+            case MELEE, FINESSE -> attacker.getAttributeModifier(StatType.STRENGTH);
+            case RANGED -> 0; // Standard ranged weapons receive no strength bonus to damage
+        };
         
         for (int i = 0; i < multiplier; i++) {
-            damageSum += weapon.damageRoll().roll(random) + strMod;
+            damageSum += weapon.damageRoll().roll(random) + damageAttrBonus;
         }
         
         int damageDealt = Math.max(1, damageSum);

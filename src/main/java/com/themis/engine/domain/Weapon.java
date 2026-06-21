@@ -2,6 +2,7 @@ package com.themis.engine.domain;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Represents a weapon that can be equipped by a character.
@@ -10,6 +11,7 @@ import java.util.Map;
 public record Weapon(
     String id,
     String name,
+    WeaponType type,
     Map<StatType, List<Modifier>> modifiers,
     DiceRoll damageRoll,
     int criticalThreatMin,
@@ -24,16 +26,29 @@ public record Weapon(
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Weapon name cannot be null or blank");
         }
+        if (type == null) {
+            throw new IllegalArgumentException("Weapon type cannot be null");
+        }
         if (damageRoll == null) {
             throw new IllegalArgumentException("Damage roll cannot be null");
         }
-        if (criticalThreatMin < 1 || criticalThreatMin > 20) {
-            throw new IllegalArgumentException("Critical threat minimum must be between 1 and 20");
+        if (criticalThreatMin < 15 || criticalThreatMin > 20) {
+            throw new IllegalArgumentException("Critical threat minimum must be between 15 and 20");
         }
-        if (criticalMultiplier < 1) {
-            throw new IllegalArgumentException("Critical multiplier must be at least 1");
+        if (criticalMultiplier < 2) {
+            throw new IllegalArgumentException("Critical multiplier must be at least 2");
         }
-        modifiers = Map.copyOf(modifiers == null ? Map.of() : modifiers);
+        
+        // Deep copy the map structure to ensure lists are also immutable
+        Map<StatType, List<Modifier>> tempModifiers = new HashMap<>();
+        if (modifiers != null) {
+            for (Map.Entry<StatType, List<Modifier>> entry : modifiers.entrySet()) {
+                if (entry.getValue() != null) {
+                    tempModifiers.put(entry.getKey(), List.copyOf(entry.getValue()));
+                }
+            }
+        }
+        modifiers = Map.copyOf(tempModifiers);
     }
 
     /**

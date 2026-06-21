@@ -23,6 +23,10 @@ public class SpellcastingFeature implements java.io.Serializable {
         if (castingAttribute == null) {
             throw new IllegalArgumentException("Casting attribute cannot be null");
         }
+        if (castingAttribute == StatType.FORTITUDE || castingAttribute == StatType.REFLEX || castingAttribute == StatType.WILL ||
+            castingAttribute == StatType.ARMOR_CLASS || castingAttribute == StatType.BASE_ATTACK_BONUS || castingAttribute == StatType.HIT_POINTS) {
+            throw new IllegalArgumentException("Casting attribute must be a core ability score");
+        }
         this.casterLevel = casterLevel;
         this.castingAttribute = castingAttribute;
     }

@@ -2,6 +2,7 @@ package com.themis.engine.domain;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Represents a status condition (e.g., Sickened, Shaken) that applies modifiers to character stats.
@@ -18,7 +19,17 @@ public record Condition(
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Condition name cannot be null or blank");
         }
-        modifiers = Map.copyOf(modifiers == null ? Map.of() : modifiers);
+        
+        // Deep copy the map structure to ensure lists are also immutable
+        Map<StatType, List<Modifier>> tempModifiers = new HashMap<>();
+        if (modifiers != null) {
+            for (Map.Entry<StatType, List<Modifier>> entry : modifiers.entrySet()) {
+                if (entry.getValue() != null) {
+                    tempModifiers.put(entry.getKey(), List.copyOf(entry.getValue()));
+                }
+            }
+        }
+        modifiers = Map.copyOf(tempModifiers);
     }
 
     /**

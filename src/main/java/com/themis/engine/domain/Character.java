@@ -60,6 +60,18 @@ public class Character implements java.io.Serializable {
         if (level < 1) {
             throw new IllegalArgumentException("Character Level must be at least 1");
         }
+        if (baseStr < 1 || baseDex < 1 || baseCon < 1 || baseInt < 1 || baseWis < 1 || baseCha < 1) {
+            throw new IllegalArgumentException("Base ability scores must be at least 1");
+        }
+        if (baseHitPoints < 1) {
+            throw new IllegalArgumentException("Base hit points must be at least 1");
+        }
+        if (baseAttackBonus < 0) {
+            throw new IllegalArgumentException("Base attack bonus cannot be negative");
+        }
+        if (baseFortitude < 0 || baseReflex < 0 || baseWill < 0) {
+            throw new IllegalArgumentException("Base saving throws cannot be negative");
+        }
 
         this.id = id;
         this.name = name;
@@ -338,5 +350,18 @@ public class Character implements java.io.Serializable {
             return baseAttackBonusModifierStack;
         }
         return null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Character character = (Character) o;
+        return id.equals(character.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
     }
 }

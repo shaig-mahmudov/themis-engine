@@ -20,7 +20,7 @@ We have successfully implemented the productionization scaffolding to secure the
 ### 3. Containerization & CI/CD
 * **Multi-Stage Dockerfile**: Created a production-ready `Dockerfile` that packages the application with Eclipse Temurin 21 JRE, running under a non-root `appuser` for security hardening.
 * **Docker Compose**: Created a `docker-compose.yml` to launch the database (PostgreSQL), cache (Redis), and application (Themis Engine) as a unified local environment with health checks.
-* **GitHub Actions Workflow**: Created `.github/workflows/build.yml` to automatically verify code compilations and run unit/integration tests with real PostgreSQL and Redis container services on pull requests and pushes to `main`.
+* **GitHub Actions Workflow**: Created `.github/workflows/build.yml` to automatically verify code compilations and run unit/integration tests on pull requests and pushes to `main`. It uses the default test profile configurations (H2 database and simple cache) to maintain fast, deterministic builds without requiring external container dependencies.
 
 ### 4. Integration Tests
 * Added `SecurityAndRateLimitTest.java` to test actuator public routing, API Key enforcement, and Bucket4j IP rate-limiting thresholds.

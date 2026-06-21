@@ -105,4 +105,19 @@ class ModifierStackTest {
     void testCannotAddNullModifier() {
         assertThrows(IllegalArgumentException.class, () -> stack.add(null));
     }
+
+    @Test
+    void testModifiersFromSameSourceDoNotStack() {
+        stack.add(new Modifier(-2, ModifierType.UNTYPED, "Sickened"));
+        stack.add(new Modifier(-2, ModifierType.UNTYPED, "Sickened"));
+        // Since they have the same source "Sickened", they should not stack, even though they are UNTYPED.
+        assertEquals(-2, stack.getTotal());
+    }
+
+    @Test
+    void testDodgeModifiersFromSameSourceDoNotStack() {
+        stack.add(new Modifier(1, ModifierType.DODGE, "Haste"));
+        stack.add(new Modifier(1, ModifierType.DODGE, "Haste"));
+        assertEquals(1, stack.getTotal());
+    }
 }

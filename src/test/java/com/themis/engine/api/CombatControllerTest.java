@@ -73,4 +73,58 @@ class CombatControllerTest {
                 .andExpect(jsonPath("$.attackRoll").value(15))
                 .andExpect(jsonPath("$.damageDealt").value(org.hamcrest.Matchers.greaterThanOrEqualTo(1)));
     }
+
+    @Test
+    void testResolveAttack_ConsumesStandardAction_AndFailsOnConsecutiveAttacks() throws Exception {
+        // 1. Create attacker (Valeros, Str 14 (+2), BAB +1)
+        Character attacker = new Character(
+            "attacker-id-2", "Valeros", 1,
+            14, 10, 10, 10, 10, 10,
+            10, 1, 0, 0, 0
+        );
+        Weapon longsword = new Weapon(
+            "lswd2", "Longsword", WeaponType.MELEE, Map.of(), DiceRoll.parse("1d8"), 19, 2
+        );
+        attacker.equipWeapon(longsword);
+        characterStore.save(attacker);
+
+        // 2. Create target (Goblin, AC 10, Max HP 10)
+        Character target = new Character(
+            "target-id-2", "Goblin", 1,
+            10, 10, 10, 10, 10, 10,
+            10, 0, 0, 0, 0
+        );
+        characterStore.save(target);
+
+        AttackRequestDto attackReq = new AttackRequestDto(
+            "attacker-id-2",
+            "target-id-2",
+            "lswd2",
+            12
+        );
+
+        // First attack succeeds
+        mockMvc.perform(post("/api/combat/attack")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(attackReq)))
+                .andExpect(status().isOk());
+
+        // Second attack fails because standard action is already used
+        mockMvc.perform(post("/api/combat/attack")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(attackReq)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Cannot attack: standard action already consumed in current turn"));
+
+        // Reset turn state via start-turn endpoint
+        mockMvc.perform(post("/api/characters/attacker-id-2/start-turn"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.turnState.standardUsed").value(false));
+
+        // Third attack now succeeds again
+        mockMvc.perform(post("/api/combat/attack")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(attackReq)))
+                .andExpect(status().isOk());
+    }
 }

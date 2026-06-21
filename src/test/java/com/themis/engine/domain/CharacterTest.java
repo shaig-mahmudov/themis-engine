@@ -219,4 +219,66 @@ class CharacterTest {
         fighter.damage(25); // total damage = 29 -> current HP = -16
         assertTrue(fighter.isDead());
     }
+
+    @Test
+    void testConditionDurationAndExpiration() {
+        Condition sickened = new Condition(
+            "cond-sickened",
+            "Sickened",
+            Map.of(StatType.FORTITUDE, List.of(new Modifier(-2, ModifierType.UNTYPED, "Sickened"))),
+            2, // 2 rounds duration
+            null
+        );
+
+        fighter.applyCondition(sickened);
+        assertEquals(2, fighter.getSave(StatType.FORTITUDE)); // Penalty applied
+        assertEquals(2, fighter.getActiveConditions().get(0).durationRounds());
+
+        // Round 1 start -> decrements to 1
+        fighter.startTurn();
+        assertEquals(2, fighter.getSave(StatType.FORTITUDE)); // Penalty still applied
+        assertEquals(1, fighter.getActiveConditions().get(0).durationRounds());
+
+        // Round 2 start -> decrements to 0, gets removed
+        fighter.startTurn();
+        assertEquals(4, fighter.getSave(StatType.FORTITUDE)); // Penalty removed!
+        assertTrue(fighter.getActiveConditions().isEmpty());
+    }
+
+    @Test
+    void testConditionStackingGroup() {
+        // Shaken: -1 morale penalty to saving throws
+        Condition shaken = new Condition(
+            "cond-shaken",
+            "Shaken",
+            Map.of(StatType.FORTITUDE, List.of(new Modifier(-1, ModifierType.UNTYPED, "Shaken"))),
+            null,
+            "Fear"
+        );
+
+        // Frightened: -2 morale penalty to saving throws
+        Condition frightened = new Condition(
+            "cond-frightened",
+            "Frightened",
+            Map.of(StatType.FORTITUDE, List.of(new Modifier(-2, ModifierType.UNTYPED, "Frightened"))),
+            null,
+            "Fear"
+        );
+
+        fighter.applyCondition(shaken);
+        fighter.applyCondition(frightened);
+
+        // Since they are in the same stacking group "Fear", they both apply modifiers with source="Fear".
+        // Therefore, they shouldn't stack, even though they are UNTYPED!
+        // Worst penalty is -2. Fortitude = Base 4 - 2 = 2
+        assertEquals(2, fighter.getSave(StatType.FORTITUDE));
+
+        // If we remove the worse one, the lesser one (-1) is still active
+        fighter.removeCondition(frightened);
+        assertEquals(3, fighter.getSave(StatType.FORTITUDE));
+
+        // Remove both -> back to normal
+        fighter.removeCondition(shaken);
+        assertEquals(4, fighter.getSave(StatType.FORTITUDE));
+    }
 }

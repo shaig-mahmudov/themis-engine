@@ -69,7 +69,7 @@ class CharacterTest {
         EquippableItem belt = new EquippableItem(
             "belt-1",
             "Belt of Giant Strength +2",
-            Map.of(StatType.STRENGTH, List.of(new Modifier(2, ModifierType.ENHANCEMENT, "Belt of Giant Strength +2")))
+            Map.of(StatType.STRENGTH, List.of(new Modifier(2, ModifierType.ENHANCEMENT, new ModifierSource("belt-1", "Belt of Giant Strength +2", SourceType.ITEM))))
         );
 
         fighter.equip(belt);
@@ -89,16 +89,16 @@ class CharacterTest {
         EquippableItem ring = new EquippableItem(
             "ring-1",
             "Ring of Protection +1",
-            Map.of(StatType.ARMOR_CLASS, List.of(new Modifier(1, ModifierType.DEFLECTION, "Ring of Protection +1")))
+            Map.of(StatType.ARMOR_CLASS, List.of(new Modifier(1, ModifierType.DEFLECTION, new ModifierSource("ring-1", "Ring of Protection +1", SourceType.ITEM))))
         );
 
         EquippableItem cloak = new EquippableItem(
             "cloak-1",
             "Cloak of Resistance +1",
             Map.of(
-                StatType.FORTITUDE, List.of(new Modifier(1, ModifierType.RESISTANCE, "Cloak of Resistance +1")),
-                StatType.REFLEX, List.of(new Modifier(1, ModifierType.RESISTANCE, "Cloak of Resistance +1")),
-                StatType.WILL, List.of(new Modifier(1, ModifierType.RESISTANCE, "Cloak of Resistance +1"))
+                StatType.FORTITUDE, List.of(new Modifier(1, ModifierType.RESISTANCE, new ModifierSource("cloak-1", "Cloak of Resistance +1", SourceType.ITEM))),
+                StatType.REFLEX, List.of(new Modifier(1, ModifierType.RESISTANCE, new ModifierSource("cloak-1", "Cloak of Resistance +1", SourceType.ITEM))),
+                StatType.WILL, List.of(new Modifier(1, ModifierType.RESISTANCE, new ModifierSource("cloak-1", "Cloak of Resistance +1", SourceType.ITEM)))
             )
         );
 
@@ -116,7 +116,7 @@ class CharacterTest {
         EquippableItem ring2 = new EquippableItem(
             "ring-2",
             "Ring of Protection +1 (Duplicate)",
-            Map.of(StatType.ARMOR_CLASS, List.of(new Modifier(1, ModifierType.DEFLECTION, "Ring of Protection +1 (Duplicate)")))
+            Map.of(StatType.ARMOR_CLASS, List.of(new Modifier(1, ModifierType.DEFLECTION, new ModifierSource("ring-2", "Ring of Protection +1 (Duplicate)", SourceType.ITEM))))
         );
         fighter.equip(ring2);
         // AC should remain 12
@@ -130,9 +130,9 @@ class CharacterTest {
             "cond-sickened",
             "Sickened",
             Map.of(
-                StatType.FORTITUDE, List.of(new Modifier(-2, ModifierType.UNTYPED, "Sickened")),
-                StatType.REFLEX, List.of(new Modifier(-2, ModifierType.UNTYPED, "Sickened")),
-                StatType.WILL, List.of(new Modifier(-2, ModifierType.UNTYPED, "Sickened"))
+                StatType.FORTITUDE, List.of(new Modifier(-2, ModifierType.UNTYPED, new ModifierSource("cond-sickened", "Sickened", SourceType.CONDITION))),
+                StatType.REFLEX, List.of(new Modifier(-2, ModifierType.UNTYPED, new ModifierSource("cond-sickened", "Sickened", SourceType.CONDITION))),
+                StatType.WILL, List.of(new Modifier(-2, ModifierType.UNTYPED, new ModifierSource("cond-sickened", "Sickened", SourceType.CONDITION)))
             )
         );
 
@@ -201,7 +201,7 @@ class CharacterTest {
         EquippableItem conBelt = new EquippableItem(
             "belt-con",
             "Belt of Constitution +2",
-            Map.of(StatType.CONSTITUTION, List.of(new Modifier(2, ModifierType.ENHANCEMENT, "Belt of Constitution +2")))
+            Map.of(StatType.CONSTITUTION, List.of(new Modifier(2, ModifierType.ENHANCEMENT, new ModifierSource("belt-con", "Belt of Constitution +2", SourceType.ITEM))))
         );
         fighter.equip(conBelt);
 
@@ -225,7 +225,7 @@ class CharacterTest {
         Condition sickened = new Condition(
             "cond-sickened",
             "Sickened",
-            Map.of(StatType.FORTITUDE, List.of(new Modifier(-2, ModifierType.UNTYPED, "Sickened"))),
+            Map.of(StatType.FORTITUDE, List.of(new Modifier(-2, ModifierType.UNTYPED, new ModifierSource("cond-sickened", "Sickened", SourceType.CONDITION)))),
             2, // 2 rounds duration
             null
         );
@@ -251,7 +251,7 @@ class CharacterTest {
         Condition shaken = new Condition(
             "cond-shaken",
             "Shaken",
-            Map.of(StatType.FORTITUDE, List.of(new Modifier(-1, ModifierType.UNTYPED, "Shaken"))),
+            Map.of(StatType.FORTITUDE, List.of(new Modifier(-1, ModifierType.UNTYPED, new ModifierSource("cond-shaken", "Shaken", SourceType.CONDITION)))),
             null,
             "Fear"
         );
@@ -260,7 +260,7 @@ class CharacterTest {
         Condition frightened = new Condition(
             "cond-frightened",
             "Frightened",
-            Map.of(StatType.FORTITUDE, List.of(new Modifier(-2, ModifierType.UNTYPED, "Frightened"))),
+            Map.of(StatType.FORTITUDE, List.of(new Modifier(-2, ModifierType.UNTYPED, new ModifierSource("cond-frightened", "Frightened", SourceType.CONDITION)))),
             null,
             "Fear"
         );

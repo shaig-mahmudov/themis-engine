@@ -5,18 +5,25 @@ This file documents key design and architectural decisions made during the devel
 ## ADR 1: Modifier Source Representation
 
 ### Status
-Accepted (Temporary/Tech Debt)
+Resolved (In Transition - Expand Phase)
 
 ### Context
 In Pathfinder 1e, modifiers are applied from various sources (e.g., spells, feats, racial traits, item enhancement, temporary conditions). To prevent multiple modifiers from the same source stacking (even if their types normally allow it, or to track active effects for cleanup), we need to track the source of each modifier.
 
 ### Decision
-For Phase 1 (MVP/Prototype), the `source` field in `Modifier` will be represented as a simple `String` (e.g., `"Bless"`, `"Amulet of Natural Armor +1"`). 
+Refactor `Modifier`'s source field from a raw `String` to a structured `ModifierSource` record containing:
+- `id` (String)
+- `name` (String)
+- `type` (SourceType enum: `ITEM`, `SPELL`, `CONDITION`, `FEAT`, `RACIAL`, `TRAIT`, `GENERIC`)
+
+To safely migrate existing serialized database records without downtime, we follow the **Expand-Migrate-Contract** pattern:
+1. **Phase 1: Expand (Current)**: Implement the new structured `ModifierSource` representation. Deploy a temporary `@JsonCreator` fallback mechanism in `Modifier` to safely read legacy string-based source fields and map them to `GENERIC` type with `WARN` logs. All new writes will strictly use the structured JSON format.
+2. **Phase 2: Migrate**: Run a background chunk-based database migration (via script or Flyway) to batch-update historical rows to the new structured JSON representation.
+3. **Phase 3: Contract**: Once legacy usage metrics drop to zero, remove the `@JsonCreator` fallback code and keep the codebase clean.
 
 ### Consequences
-* **Pros:** Extremely fast to implement, lightweight, and easy to print/debug in tests.
-* **Cons:** Creates significant technical debt. String matching is error-prone, doesn't enforce schema (like distinguishing an Item ID from a Spell ID), and makes validation of source-uniqueness or dynamic cleanup fragile.
-* **Refactoring Note:** **CRITICAL.** Before Phase 2 begins or the codebase grows significantly, this must be refactored into a structured `Source` value object or entity (e.g., containing `SourceType` enum and `SourceId` UUID/String) to prevent domain degradation.
+* **Pros:** Enhances type safety, enforces schema for modifiers, improves stacking correctness, and avoids downtime during migration.
+* **Cons:** Temporary code complexity due to fallback serialization support.
 
 ---
 

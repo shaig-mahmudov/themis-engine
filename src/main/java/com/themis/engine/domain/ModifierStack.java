@@ -57,7 +57,7 @@ public class ModifierStack implements java.io.Serializable {
             List<Modifier> mods = entry.getValue();
 
             // Group by source within this modifier type to prevent identical sources from stacking
-            Map<String, List<Modifier>> groupedBySource = mods.stream()
+            Map<ModifierSource, List<Modifier>> groupedBySource = mods.stream()
                     .collect(Collectors.groupingBy(Modifier::source));
 
             List<Integer> resolvedPositiveBonuses = new java.util.ArrayList<>();

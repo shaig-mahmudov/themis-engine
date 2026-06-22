@@ -53,7 +53,7 @@ class CombatControllerTest {
             10, 0, 0, 0, 0
         );
         target.equip(new EquippableItem("goblin-shield", "Shield", 
-            Map.of(StatType.ARMOR_CLASS, java.util.List.of(new Modifier(5, ModifierType.SHIELD, "Shield")))));
+            Map.of(StatType.ARMOR_CLASS, java.util.List.of(new Modifier(5, ModifierType.SHIELD, new ModifierSource("goblin-shield", "Shield", SourceType.ITEM))))));
         characterStore.save(target);
 
         // 3. Resolve attack: d20Roll = 12. Total attack = 12 + 1 (BAB) + 2 (Str) = 15. AC is 15. -> Hit!

@@ -44,7 +44,7 @@ class PostgresCharacterRepositoryAdapterTest {
         EquippableItem intelligenceHeadband = new EquippableItem(
             "headband-vast-int",
             "Headband of Vast Intelligence +2",
-            Map.of(StatType.INTELLIGENCE, List.of(new Modifier(2, ModifierType.ENHANCEMENT, "Headband of Vast Intelligence +2")))
+            Map.of(StatType.INTELLIGENCE, List.of(new Modifier(2, ModifierType.ENHANCEMENT, new ModifierSource("headband-vast-int", "Headband of Vast Intelligence +2", SourceType.ITEM))))
         );
         original.equip(intelligenceHeadband);
 
@@ -52,9 +52,9 @@ class PostgresCharacterRepositoryAdapterTest {
             "cloak-res-2",
             "Cloak of Resistance +2",
             Map.of(
-                StatType.FORTITUDE, List.of(new Modifier(2, ModifierType.RESISTANCE, "Cloak of Resistance +2")),
-                StatType.REFLEX, List.of(new Modifier(2, ModifierType.RESISTANCE, "Cloak of Resistance +2")),
-                StatType.WILL, List.of(new Modifier(2, ModifierType.RESISTANCE, "Cloak of Resistance +2"))
+                StatType.FORTITUDE, List.of(new Modifier(2, ModifierType.RESISTANCE, new ModifierSource("cloak-res-2", "Cloak of Resistance +2", SourceType.ITEM))),
+                StatType.REFLEX, List.of(new Modifier(2, ModifierType.RESISTANCE, new ModifierSource("cloak-res-2", "Cloak of Resistance +2", SourceType.ITEM))),
+                StatType.WILL, List.of(new Modifier(2, ModifierType.RESISTANCE, new ModifierSource("cloak-res-2", "Cloak of Resistance +2", SourceType.ITEM)))
             )
         );
         original.equip(cloak);
@@ -64,8 +64,8 @@ class PostgresCharacterRepositoryAdapterTest {
             "fatigued-cond",
             "Fatigued",
             Map.of(
-                StatType.STRENGTH, List.of(new Modifier(-2, ModifierType.UNTYPED, "Fatigued")),
-                StatType.DEXTERITY, List.of(new Modifier(-2, ModifierType.UNTYPED, "Fatigued"))
+                StatType.STRENGTH, List.of(new Modifier(-2, ModifierType.UNTYPED, new ModifierSource("fatigued-cond", "Fatigued", SourceType.CONDITION))),
+                StatType.DEXTERITY, List.of(new Modifier(-2, ModifierType.UNTYPED, new ModifierSource("fatigued-cond", "Fatigued", SourceType.CONDITION)))
             )
         );
         original.applyCondition(fatigued);
@@ -75,7 +75,7 @@ class PostgresCharacterRepositoryAdapterTest {
             "mwk-dagger",
             "Masterwork Dagger",
             WeaponType.MELEE,
-            Map.of(StatType.BASE_ATTACK_BONUS, List.of(new Modifier(1, ModifierType.ENHANCEMENT, "Masterwork"))),
+            Map.of(StatType.BASE_ATTACK_BONUS, List.of(new Modifier(1, ModifierType.ENHANCEMENT, new ModifierSource("mwk-dagger", "Masterwork", SourceType.ITEM)))),
             DiceRoll.parse("1d4"),
             19,
             2

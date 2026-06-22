@@ -119,7 +119,7 @@ class ActionEconomyAndSpellcastingTest {
         EquippableItem headband = new EquippableItem(
             "headband-1",
             "Headband of Vast Intelligence +2",
-            Map.of(StatType.INTELLIGENCE, List.of(new Modifier(2, ModifierType.ENHANCEMENT, "Headband of Vast Intelligence +2")))
+            Map.of(StatType.INTELLIGENCE, List.of(new Modifier(2, ModifierType.ENHANCEMENT, new ModifierSource("headband-1", "Headband of Vast Intelligence +2", SourceType.ITEM))))
         );
         wizard.equip(headband);
 

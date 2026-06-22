@@ -24,7 +24,7 @@ class RuleEngineTest {
         // Target: Level 1, AC 15 (base 10 + dex + shield)
         target = new Character("target", "Target", 1, 10, 10, 10, 10, 10, 10, 15, 0, 0, 0, 0);
         target.equip(new EquippableItem("shield", "Shield", 
-            Map.of(StatType.ARMOR_CLASS, java.util.List.of(new Modifier(5, ModifierType.SHIELD, "Shield")))));
+            Map.of(StatType.ARMOR_CLASS, java.util.List.of(new Modifier(5, ModifierType.SHIELD, new ModifierSource("shield", "Shield", SourceType.ITEM))))));
 
         // Longsword: 1d8 damage, Threat 19-20, x2 multiplier
         longsword = new Weapon("longsword", "Longsword", WeaponType.MELEE, Map.of(), DiceRoll.parse("1d8"), 19, 2);
@@ -76,7 +76,7 @@ class RuleEngineTest {
         // Target AC is 100. Natural 20 always hits and threatens critical.
         target = new Character("target", "Target", 1, 10, 10, 10, 10, 10, 10, 10, 0, 0, 0, 0);
         var superAcItem = new EquippableItem("cloak", "Cloak of Invincibility", 
-            Map.of(StatType.ARMOR_CLASS, java.util.List.of(new Modifier(90, ModifierType.UNTYPED, "Magic"))));
+            Map.of(StatType.ARMOR_CLASS, java.util.List.of(new Modifier(90, ModifierType.UNTYPED, new ModifierSource("cloak", "Cloak of Invincibility", SourceType.ITEM)))));
         target.equip(superAcItem);
         assertEquals(100, target.getArmorClass());
 

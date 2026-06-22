@@ -29,13 +29,15 @@ public record Condition(
         // Deep copy the map structure to ensure lists are also immutable
         // Also normalize modifier sources to match stackingGroup or name so stacking engine works correctly
         Map<StatType, List<Modifier>> tempModifiers = new java.util.HashMap<>();
-        String effectiveSource = (stackingGroup != null && !stackingGroup.isBlank()) ? stackingGroup : name;
+        String effectiveSourceName = (stackingGroup != null && !stackingGroup.isBlank()) ? stackingGroup : name;
+        String effectiveSourceId = (stackingGroup != null && !stackingGroup.isBlank()) ? "group-" + stackingGroup : id;
+        ModifierSource modifierSource = new ModifierSource(effectiveSourceId, effectiveSourceName, SourceType.CONDITION);
         
         if (modifiers != null) {
             for (Map.Entry<StatType, List<Modifier>> entry : modifiers.entrySet()) {
                 if (entry.getValue() != null) {
                     List<Modifier> normalizedModifiers = entry.getValue().stream()
-                        .map(m -> new Modifier(m.value(), m.type(), effectiveSource))
+                        .map(m -> new Modifier(m.value(), m.type(), modifierSource))
                         .toList();
                     tempModifiers.put(entry.getKey(), List.copyOf(normalizedModifiers));
                 }

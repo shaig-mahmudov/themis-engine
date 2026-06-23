@@ -30,17 +30,23 @@ To safely migrate existing serialized database records without downtime, we foll
 ## ADR 2: Armor Class Max Dexterity Bonus Capping
 
 ### Status
-Accepted (Deferred to Phase 3)
+Resolved (Completed)
 
 ### Context
-In Pathfinder 1e, wearing medium or heavy armor caps the maximum Dexterity modifier that can be added to the character's Armor Class (AC). 
+In Pathfinder 1e, wearing armor caps the maximum Dexterity modifier that can be added to the character's Armor Class (AC). We need to implement this restriction cleanly without cluttering the generic EquippableItem definition.
 
 ### Decision
-For Phase 2, we will calculate Armor Class simply as `10 + Dex Modifier + AC Modifiers` without applying any maximum cap. The capping logic will be implemented in Phase 3 when full equipment rules are introduced.
+We introduced a dedicated `Armor` domain record containing:
+- `id` (String)
+- `name` (String)
+- `modifiers` (Map<StatType, List<Modifier>>)
+- `maxDexterityBonus` (Integer)
+
+The `Character` aggregate root was modified to maintain a collection of equipped armors and shields, and `getArmorClass()` was updated to cap the Dexterity modifier by the lowest `maxDexterityBonus` of all equipped items. The data is persisted in a separate `character_equipped_armors` table mapping 1-to-1 with database entities.
 
 ### Consequences
-* **Pros:** Simplifies the Phase 2 implementation of the Character aggregate.
-* **Cons:** Calculated AC for heavily armored characters with high Dexterity will be temporarily incorrect according to official rules.
+* **Pros:** Clean domain model separation, keeps EquippableItem generic, rules-compliant AC calculation for armored characters.
+* **Cons:** Introduces a new database table and domain concept, adding slightly more persistence mapping.
 
 ---
 

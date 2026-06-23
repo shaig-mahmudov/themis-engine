@@ -79,7 +79,7 @@ class CharacterControllerTest {
         EquippableItem ring = new EquippableItem(
             "ring-protection-1",
             "Ring of Protection +1",
-            Map.of(StatType.ARMOR_CLASS, List.of(new Modifier(1, ModifierType.DEFLECTION, "Ring")))
+            Map.of(StatType.ARMOR_CLASS, List.of(new Modifier(1, ModifierType.DEFLECTION, new ModifierSource("ring", "Ring", SourceType.ITEM))))
         );
         mockMvc.perform(post("/api/characters/test-char-2/equip-item")
                 .header("X-API-KEY", "default-dev-key")
@@ -92,7 +92,7 @@ class CharacterControllerTest {
         Condition shaken = new Condition(
             "shaken-cond",
             "Shaken",
-            Map.of(StatType.WILL, List.of(new Modifier(-2, ModifierType.UNTYPED, "Fear")))
+            Map.of(StatType.WILL, List.of(new Modifier(-2, ModifierType.UNTYPED, new ModifierSource("fear", "Fear", SourceType.CONDITION))))
         );
         mockMvc.perform(post("/api/characters/test-char-2/apply-condition")
                 .header("X-API-KEY", "default-dev-key")

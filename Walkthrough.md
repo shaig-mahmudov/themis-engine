@@ -190,7 +190,7 @@ Enforces stacking rules for modifiers in Pathfinder 1e.
 
 ### 1. Architecture Decision Records (ADR)
 * Created [DECISIONS.md](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/DECISIONS.md) to log:
-  * **ADR 1:** Represents modifier sources as `String` for Phase 1, marking it as critical tech debt to refactor before Phase 2.
+  * **ADR 1:** Represents modifier sources as a structured `ModifierSource` record (refactored from the legacy `String` representation, migrating old database schemas via Flyway Java-based migration and contracting the domain model).
 
 ### 2. Domain Implementation
 * Created [ModifierType.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/domain/ModifierType.java): Enum flagging stackable (`DODGE`, `UNTYPED`) and non-stackable modifier types.

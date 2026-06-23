@@ -5,7 +5,7 @@ This file documents key design and architectural decisions made during the devel
 ## ADR 1: Modifier Source Representation
 
 ### Status
-Resolved (In Transition - Expand Phase)
+Resolved (Completed)
 
 ### Context
 In Pathfinder 1e, modifiers are applied from various sources (e.g., spells, feats, racial traits, item enhancement, temporary conditions). To prevent multiple modifiers from the same source stacking (even if their types normally allow it, or to track active effects for cleanup), we need to track the source of each modifier.

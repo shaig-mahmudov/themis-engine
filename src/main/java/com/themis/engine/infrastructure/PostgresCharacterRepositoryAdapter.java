@@ -142,6 +142,24 @@ public class PostgresCharacterRepositoryAdapter implements CharacterStore {
         }
         entity.getEquippedWeapons().addAll(equippedWeaponsList);
 
+        // Map equipped armors
+        List<CharacterEquippedArmorEntity> equippedArmorsList = new ArrayList<>();
+        for (Armor armor : domain.getEquippedArmors()) {
+            try {
+                String json = objectMapper.writeValueAsString(armor.modifiers());
+                equippedArmorsList.add(new CharacterEquippedArmorEntity(
+                    domain.getId(),
+                    armor.id(),
+                    armor.name(),
+                    json,
+                    armor.maxDexterityBonus()
+                ));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Failed to serialize armor modifiers for: " + armor.id(), e);
+            }
+        }
+        entity.getEquippedArmors().addAll(equippedArmorsList);
+
         return entity;
     }
 
@@ -213,6 +231,22 @@ public class PostgresCharacterRepositoryAdapter implements CharacterStore {
                 domain.equipWeapon(weapon);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to deserialize weapon modifiers for: " + weaponEntity.getWeaponId(), e);
+            }
+        }
+
+        // Equip armors back
+        for (CharacterEquippedArmorEntity armorEntity : entity.getEquippedArmors()) {
+            try {
+                Map<StatType, List<Modifier>> modifiers = objectMapper.readValue(armorEntity.getModifiersJson(), modifiersMapType);
+                Armor armor = new Armor(
+                    armorEntity.getArmorId(),
+                    armorEntity.getName(),
+                    modifiers,
+                    armorEntity.getMaxDexterityBonus()
+                );
+                domain.equipArmor(armor);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to deserialize armor modifiers for: " + armorEntity.getArmorId(), e);
             }
         }
 

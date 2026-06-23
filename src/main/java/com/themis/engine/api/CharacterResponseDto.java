@@ -24,6 +24,7 @@ public record CharacterResponseDto(
     int willSave,
     List<EquippedItemDto> equippedItems,
     List<EquippedWeaponDto> equippedWeapons,
+    List<EquippedArmorDto> equippedArmors,
     List<ActiveConditionDto> activeConditions,
     SpellcastingDto spellcasting,
     TurnStateDto turnState,
@@ -52,6 +53,15 @@ public record CharacterResponseDto(
                 w.damageRoll().toString(),
                 w.criticalThreatMin(),
                 w.criticalMultiplier()
+            ))
+            .collect(Collectors.toList());
+
+        List<EquippedArmorDto> armors = c.getEquippedArmors().stream()
+            .map(a -> new EquippedArmorDto(
+                a.id(),
+                a.name(),
+                a.modifiers(),
+                a.maxDexterityBonus()
             ))
             .collect(Collectors.toList());
 
@@ -98,6 +108,7 @@ public record CharacterResponseDto(
             c.getSave(StatType.WILL),
             items,
             weapons,
+            armors,
             conditions,
             spellcastingDto,
             turnStateDto,
@@ -115,6 +126,12 @@ public record CharacterResponseDto(
         String damageRoll,
         int criticalThreatMin,
         int criticalMultiplier
+    ) {}
+    public record EquippedArmorDto(
+        String id,
+        String name,
+        Map<StatType, List<com.themis.engine.domain.Modifier>> modifiers,
+        Integer maxDexterityBonus
     ) {}
     public record ActiveConditionDto(
         String id,

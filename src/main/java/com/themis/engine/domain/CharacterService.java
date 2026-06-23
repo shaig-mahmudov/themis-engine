@@ -53,6 +53,26 @@ public class CharacterService {
         });
     }
 
+    public Optional<Character> equipArmor(String id, Armor armor) {
+        if (armor == null) {
+            throw new IllegalArgumentException("Armor cannot be null");
+        }
+        return characterStore.findById(id).map(c -> {
+            c.equipArmor(armor);
+            return characterStore.save(c);
+        });
+    }
+
+    public Optional<Character> unequipArmor(String id, String armorId) {
+        if (armorId == null || armorId.isBlank()) {
+            throw new IllegalArgumentException("Armor ID cannot be null or blank");
+        }
+        return characterStore.findById(id).map(c -> {
+            c.unequipArmorById(armorId);
+            return characterStore.save(c);
+        });
+    }
+
     public Optional<Character> applyCondition(String id, Condition condition) {
         if (condition == null) {
             throw new IllegalArgumentException("Condition cannot be null");

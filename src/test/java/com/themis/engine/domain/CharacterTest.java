@@ -281,4 +281,61 @@ class CharacterTest {
         fighter.removeCondition(shaken);
         assertEquals(4, fighter.getSave(StatType.FORTITUDE));
     }
+
+    @Test
+    void testEquipArmorCapsMaxDexterityBonus() {
+        // Fighter starts with DEX 12 (+1), so getArmorClass is 11 (10 base + 1 dex)
+        assertEquals(11, fighter.getArmorClass());
+
+        // 1. Equip Leather Armor (Max Dex 6, Armor bonus +2)
+        Armor leather = new Armor(
+            "leather-1",
+            "Leather Armor",
+            Map.of(StatType.ARMOR_CLASS, List.of(new Modifier(2, ModifierType.ARMOR, new ModifierSource("leather-1", "Leather Armor", SourceType.ITEM)))),
+            6
+        );
+        fighter.equipArmor(leather);
+        // Dex mod is 1. Min Max Dex is 6. Mod is not capped because 1 <= 6.
+        // AC = 10 base + 1 dex + 2 armor = 13
+        assertEquals(13, fighter.getArmorClass());
+
+        // 2. Equip heavy plate (Max Dex 1, Armor bonus +8)
+        Armor fullPlate = new Armor(
+            "plate-1",
+            "Full Plate",
+            Map.of(StatType.ARMOR_CLASS, List.of(new Modifier(8, ModifierType.ARMOR, new ModifierSource("plate-1", "Full Plate", SourceType.ITEM)))),
+            1
+        );
+        fighter.equipArmor(fullPlate);
+        // Equipped: leather (max dex 6), full plate (max dex 1). Min Max Dex is 1.
+        // Dex mod is 1. Mod is not capped because 1 <= 1.
+        // Armor modifiers do not stack, so only the +8 from Full Plate is applied.
+        // AC = 10 base + 1 dex + 8 armor = 19
+        assertEquals(19, fighter.getArmorClass());
+
+        // 3. Equip dynamic Dexterity belt to boost DEX to 18 (+4)
+        EquippableItem belt = new EquippableItem(
+            "belt-dex",
+            "Belt of Incredible Dexterity +6",
+            Map.of(StatType.DEXTERITY, List.of(new Modifier(6, ModifierType.ENHANCEMENT, new ModifierSource("belt-dex", "Belt of Incredible Dexterity +6", SourceType.ITEM))))
+        );
+        fighter.equip(belt);
+        // Dex mod is now +4.
+        // With full plate, Min Max Dex is 1. Mod (+4) is capped to 1.
+        // Armor modifiers do not stack, so only the +8 from Full Plate is applied.
+        // AC = 10 base + 1 dex (capped) + 8 armor = 19
+        assertEquals(19, fighter.getArmorClass());
+
+        // 4. Unequip full plate
+        fighter.unequipArmor(fullPlate);
+        // Only Leather remains. Max Dex is 6. Dex mod +4 is not capped.
+        // AC = 10 base + 4 dex + 2 armor = 16
+        assertEquals(16, fighter.getArmorClass());
+
+        // 5. Unequip leather
+        fighter.unequipArmor(leather);
+        // No armor remains. Dex mod +4 is not capped.
+        // AC = 10 base + 4 dex = 14
+        assertEquals(14, fighter.getArmorClass());
+    }
 }

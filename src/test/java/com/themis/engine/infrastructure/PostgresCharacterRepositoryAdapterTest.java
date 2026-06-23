@@ -82,6 +82,15 @@ class PostgresCharacterRepositoryAdapterTest {
         );
         original.equipWeapon(masterworkDagger);
 
+        // Equip an armor (Mithral Shirt: +4 Armor, max dex 6)
+        Armor mithralShirt = new Armor(
+            "mithral-shirt",
+            "Mithral Shirt",
+            Map.of(StatType.ARMOR_CLASS, List.of(new Modifier(4, ModifierType.ARMOR, new ModifierSource("mithral-shirt", "Mithral Shirt", SourceType.ITEM)))),
+            6
+        );
+        original.equipArmor(mithralShirt);
+
         // 4. Configure spellcasting
         SpellcastingFeature sf = new SpellcastingFeature(5, StatType.INTELLIGENCE);
         sf.setMaxSlots(1, 4);
@@ -94,6 +103,8 @@ class PostgresCharacterRepositoryAdapterTest {
         original.damage(10);
 
         // Verify initial calculations
+        // AC: 10 base + 1 dex (fatigued) + 4 armor = 15
+        assertEquals(15, original.getArmorClass());
         // INT: Base 18 + Headband 2 = 20 (+5 mod)
         assertEquals(20, original.getAttributeScore(StatType.INTELLIGENCE));
         // Save DC for level 1 spell: 10 + 1 + 5 = 16
@@ -147,6 +158,7 @@ class PostgresCharacterRepositoryAdapterTest {
         assertEquals(2, loaded.getEquippedItems().size());
         assertEquals(1, loaded.getActiveConditions().size());
         assertEquals(1, loaded.getEquippedWeapons().size());
+        assertEquals(1, loaded.getEquippedArmors().size());
 
         Weapon loadedWeapon = loaded.getEquippedWeapons().get(0);
         assertEquals("mwk-dagger", loadedWeapon.id());
@@ -156,5 +168,12 @@ class PostgresCharacterRepositoryAdapterTest {
         assertEquals("1d4", loadedWeapon.damageRoll().toString());
         // Verify weapon enhancement modifier on loaded BAB
         assertEquals(3, loaded.getBaseAttackBonus());
+
+        Armor loadedArmor = loaded.getEquippedArmors().get(0);
+        assertEquals("mithral-shirt", loadedArmor.id());
+        assertEquals("Mithral Shirt", loadedArmor.name());
+        assertEquals(6, loadedArmor.maxDexterityBonus());
+        // Verify armor + dex cap on loaded AC
+        assertEquals(15, loaded.getArmorClass());
     }
 }

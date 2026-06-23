@@ -82,6 +82,10 @@ public class CharacterEntity {
     @JoinColumn(name = "character_id")
     private Set<CharacterEquippedWeaponEntity> equippedWeapons = new LinkedHashSet<>();
 
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "character_id")
+    private Set<CharacterEquippedArmorEntity> equippedArmors = new LinkedHashSet<>();
+
     @Column(name = "standard_used", nullable = false)
     private boolean standardUsed;
 
@@ -268,6 +272,14 @@ public class CharacterEntity {
 
     public void setEquippedWeapons(Set<CharacterEquippedWeaponEntity> equippedWeapons) {
         this.equippedWeapons = equippedWeapons;
+    }
+
+    public Set<CharacterEquippedArmorEntity> getEquippedArmors() {
+        return equippedArmors;
+    }
+
+    public void setEquippedArmors(Set<CharacterEquippedArmorEntity> equippedArmors) {
+        this.equippedArmors = equippedArmors;
     }
 
     public boolean isStandardUsed() {

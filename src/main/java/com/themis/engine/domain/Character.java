@@ -31,6 +31,7 @@ public class Character implements java.io.Serializable {
     private int currentDamage = 0;
     private final List<EquippableItem> equippedItems = new ArrayList<>();
     private final List<Weapon> equippedWeapons = new ArrayList<>();
+    private final List<Armor> equippedArmors = new ArrayList<>();
     private final List<Condition> activeConditions = new ArrayList<>();
     private final TurnState turnState = new TurnState();
     private SpellcastingFeature spellcastingFeature;
@@ -174,7 +175,16 @@ public class Character implements java.io.Serializable {
     }
 
     public int getArmorClass() {
-        return armorClass.getValue(getAttributeModifier(StatType.DEXTERITY));
+        int dexModifier = getAttributeModifier(StatType.DEXTERITY);
+        Integer minMaxDex = equippedArmors.stream()
+            .map(Armor::maxDexterityBonus)
+            .filter(java.util.Objects::nonNull)
+            .reduce(Integer::min)
+            .orElse(null);
+        if (minMaxDex != null && dexModifier > minMaxDex) {
+            dexModifier = minMaxDex;
+        }
+        return armorClass.getValue(dexModifier);
     }
 
     public int getSave(StatType saveType) {
@@ -199,6 +209,10 @@ public class Character implements java.io.Serializable {
 
     public List<Weapon> getEquippedWeapons() {
         return List.copyOf(equippedWeapons);
+    }
+
+    public List<Armor> getEquippedArmors() {
+        return List.copyOf(equippedArmors);
     }
 
     public List<Condition> getActiveConditions() {
@@ -294,6 +308,39 @@ public class Character implements java.io.Serializable {
         }
         if (equippedWeapons.remove(weapon)) {
             removeModifiers(weapon.modifiers());
+        }
+    }
+
+    public void equipArmor(Armor armor) {
+        if (armor == null) {
+            throw new IllegalArgumentException("Cannot equip null armor");
+        }
+        if (equippedArmors.contains(armor)) {
+            return;
+        }
+        equippedArmors.add(armor);
+        applyModifiers(armor.modifiers());
+    }
+
+    public void unequipArmor(Armor armor) {
+        if (armor == null) {
+            throw new IllegalArgumentException("Cannot unequip null armor");
+        }
+        if (equippedArmors.remove(armor)) {
+            removeModifiers(armor.modifiers());
+        }
+    }
+
+    public void unequipArmorById(String armorId) {
+        if (armorId == null || armorId.isBlank()) {
+            throw new IllegalArgumentException("Cannot unequip null or blank armor ID");
+        }
+        Armor found = equippedArmors.stream()
+            .filter(a -> a.id().equals(armorId))
+            .findFirst()
+            .orElse(null);
+        if (found != null) {
+            unequipArmor(found);
         }
     }
 

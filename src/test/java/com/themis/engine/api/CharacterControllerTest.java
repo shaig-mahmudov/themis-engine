@@ -151,4 +151,61 @@ class CharacterControllerTest {
                 .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value("Damage amount cannot be negative"));
     }
+
+    @Test
+    void testEquipArmor_Success() throws Exception {
+        // 1. Create character with high dex (18 -> +4 mod)
+        CharacterRequestDto request = new CharacterRequestDto(
+            "test-char-dex",
+            "Merisiel",
+            1,
+            10, 18, 12, 10, 10, 10,
+            8, 0, 0, 2, 0
+        );
+        mockMvc.perform(post("/api/characters")
+                .header("X-API-KEY", "default-dev-key")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.armorClass").value(14)); // Base 10 + Dex 4 = 14
+
+        // 2. Equip Full Plate (Max Dex 1, Armor bonus +8)
+        EquipArmorRequestDto fullPlate = new EquipArmorRequestDto(
+            "full-plate-1",
+            "Full Plate",
+            Map.of(StatType.ARMOR_CLASS, List.of(new Modifier(8, ModifierType.ARMOR, new ModifierSource("plate-1", "Full Plate", SourceType.ITEM)))),
+            1
+        );
+        mockMvc.perform(post("/api/characters/test-char-dex/equip-armor")
+                .header("X-API-KEY", "default-dev-key")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(fullPlate)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.armorClass").value(19)) // Base 10 + Dex 1 (capped) + 8 armor = 19
+                .andExpect(jsonPath("$.equippedArmors[0].id").value("full-plate-1"));
+
+        // 3. Unequip Full Plate
+        mockMvc.perform(post("/api/characters/test-char-dex/unequip-armor?armorId=full-plate-1")
+                .header("X-API-KEY", "default-dev-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.armorClass").value(14)) // Base 10 + Dex 4 = 14
+                .andExpect(jsonPath("$.equippedArmors").isEmpty());
+    }
+
+    @Test
+    void testEquipArmor_ValidationFailed() throws Exception {
+        EquipArmorRequestDto request = new EquipArmorRequestDto(
+            "invalid-armor",
+            "Invalid Armor",
+            Map.of(),
+            -1 // negative max dexterity bonus
+        );
+
+        mockMvc.perform(post("/api/characters/test-char-2/equip-armor")
+                .header("X-API-KEY", "default-dev-key")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Validation Failed"));
+    }
 }

@@ -56,6 +56,28 @@ public class CharacterController {
             .orElse(ResponseEntity.notFound().build());
     }
 
+    @PostMapping("/{id}/equip-armor")
+    public ResponseEntity<CharacterResponseDto> equipArmor(
+        @PathVariable String id,
+        @Valid @RequestBody EquipArmorRequestDto request
+    ) {
+        return characterService.equipArmor(id, request.toDomain())
+            .map(CharacterResponseDto::fromDomain)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/unequip-armor")
+    public ResponseEntity<CharacterResponseDto> unequipArmor(
+        @PathVariable String id,
+        @RequestParam String armorId
+    ) {
+        return characterService.unequipArmor(id, armorId)
+            .map(CharacterResponseDto::fromDomain)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping("/{id}/apply-condition")
     public ResponseEntity<CharacterResponseDto> applyCondition(
         @PathVariable String id,

@@ -122,16 +122,16 @@ class ModifierStackTest {
     }
 
     @Test
-    void testLegacyStringSourceDeserialization() throws Exception {
+    void testModifierDeserialization() throws Exception {
         com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-        String json = "{\"value\":2,\"type\":\"ENHANCEMENT\",\"source\":\"Belt of Giant Strength\"}";
+        String json = "{\"value\":2,\"type\":\"ENHANCEMENT\",\"source\":{\"id\":\"belt-strength\",\"name\":\"Belt of Giant Strength\",\"type\":\"ITEM\"}}";
         Modifier modifier = mapper.readValue(json, Modifier.class);
         
         assertEquals(2, modifier.value());
         assertEquals(ModifierType.ENHANCEMENT, modifier.type());
         assertNotNull(modifier.source());
-        assertEquals("Belt of Giant Strength", modifier.source().id());
+        assertEquals("belt-strength", modifier.source().id());
         assertEquals("Belt of Giant Strength", modifier.source().name());
-        assertEquals(SourceType.GENERIC, modifier.source().type());
+        assertEquals(SourceType.ITEM, modifier.source().type());
     }
 }

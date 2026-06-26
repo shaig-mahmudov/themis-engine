@@ -208,4 +208,66 @@ class CharacterControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Validation Failed"));
     }
+
+    @Test
+    void testSpellcastingFlow() throws Exception {
+        // 1. Create Character
+        CharacterRequestDto createRequest = new CharacterRequestDto(
+            "test-wizard",
+            "Ezren",
+            1,
+            8, 12, 12, 15, 13, 10,
+            6, 0, 0, 0, 2
+        );
+        mockMvc.perform(post("/api/characters")
+                .header("X-API-KEY", "default-dev-key")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createRequest)))
+                .andExpect(status().isCreated());
+
+        // 2. Configure Spellcasting (3 Cantrips, 2 Level 1 spells)
+        java.util.List<Integer> maxSlots = java.util.Arrays.asList(3, 2, 0, 0, 0, 0, 0, 0, 0, 0);
+        ConfigureSpellcastingRequestDto configRequest = new ConfigureSpellcastingRequestDto(
+            1, "INTELLIGENCE", maxSlots
+        );
+
+        mockMvc.perform(post("/api/characters/test-wizard/spellcasting")
+                .header("X-API-KEY", "default-dev-key")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(configRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.spellcasting.casterLevel").value(1))
+                .andExpect(jsonPath("$.spellcasting.castingAttribute").value("INTELLIGENCE"))
+                .andExpect(jsonPath("$.spellcasting.maxSlots[0]").value(3))
+                .andExpect(jsonPath("$.spellcasting.remainingSlots[0]").value(3))
+                .andExpect(jsonPath("$.spellcasting.maxSlots[1]").value(2))
+                .andExpect(jsonPath("$.spellcasting.remainingSlots[1]").value(2))
+                .andExpect(jsonPath("$.spellcasting.spellSaveDcs[0]").value(12)) // 10 + 0 + 2 = 12
+                .andExpect(jsonPath("$.spellcasting.spellSaveDcs[1]").value(13)); // 10 + 1 + 2 = 13
+
+        // 3. Consume Spell Slot (Level 1)
+        mockMvc.perform(post("/api/characters/test-wizard/spellcasting/consume-slot?spellLevel=1")
+                .header("X-API-KEY", "default-dev-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.spellcasting.remainingSlots[1]").value(1));
+
+        // 4. Consume second slot (Level 1)
+        mockMvc.perform(post("/api/characters/test-wizard/spellcasting/consume-slot?spellLevel=1")
+                .header("X-API-KEY", "default-dev-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.spellcasting.remainingSlots[1]").value(0));
+
+        // 5. Attempt to consume when remaining slots are 0 -> should throw and get 400 Bad Request
+        mockMvc.perform(post("/api/characters/test-wizard/spellcasting/consume-slot?spellLevel=1")
+                .header("X-API-KEY", "default-dev-key"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("No spell slots remaining at level 1"));
+
+        // 6. Rest the character and verify slots are restored
+        mockMvc.perform(post("/api/characters/test-wizard/rest")
+                .header("X-API-KEY", "default-dev-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.spellcasting.remainingSlots[1]").value(2));
+    }
 }

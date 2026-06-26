@@ -80,11 +80,13 @@ public record CharacterResponseDto(
             var sf = c.getSpellcastingFeature();
             int[] maxSlots = new int[10];
             int[] remainingSlots = new int[10];
+            int[] spellSaveDcs = new int[10];
             for (int i = 0; i <= 9; i++) {
                 maxSlots[i] = sf.getMaxSlots(i);
                 remainingSlots[i] = sf.getRemainingSlots(i);
+                spellSaveDcs[i] = c.getSpellSaveDC(i);
             }
-            spellcastingDto = new SpellcastingDto(sf.getCasterLevel(), sf.getCastingAttribute().name(), maxSlots, remainingSlots);
+            spellcastingDto = new SpellcastingDto(sf.getCasterLevel(), sf.getCastingAttribute().name(), maxSlots, remainingSlots, spellSaveDcs);
         }
 
         TurnStateDto turnStateDto = new TurnStateDto(
@@ -140,6 +142,6 @@ public record CharacterResponseDto(
         Integer durationRounds,
         String stackingGroup
     ) {}
-    public record SpellcastingDto(int casterLevel, String castingAttribute, int[] maxSlots, int[] remainingSlots) {}
+    public record SpellcastingDto(int casterLevel, String castingAttribute, int[] maxSlots, int[] remainingSlots, int[] spellSaveDcs) {}
     public record TurnStateDto(boolean standardUsed, boolean moveUsed, boolean swiftUsed) {}
 }

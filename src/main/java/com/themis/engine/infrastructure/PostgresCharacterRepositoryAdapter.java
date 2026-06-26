@@ -88,6 +88,11 @@ public class PostgresCharacterRepositoryAdapter implements CharacterStore {
             }
             entity.setSpellcastingMaxSlots(String.join(",", maxSlots));
             entity.setSpellcastingRemainingSlots(String.join(",", remainingSlots));
+        } else {
+            entity.setSpellcastingCasterLevel(null);
+            entity.setSpellcastingAttribute(null);
+            entity.setSpellcastingMaxSlots(null);
+            entity.setSpellcastingRemainingSlots(null);
         }
 
         // Map equipped items

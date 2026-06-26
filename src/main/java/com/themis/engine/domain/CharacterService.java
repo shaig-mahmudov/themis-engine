@@ -2,6 +2,7 @@ package com.themis.engine.domain;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -127,6 +128,34 @@ public class CharacterService {
         }
         return characterStore.findById(id).map(c -> {
             c.getTurnState().consume(actionType);
+            return characterStore.save(c);
+        });
+    }
+
+    public Optional<Character> configureSpellcasting(String id, int casterLevel, StatType castingAttribute, List<Integer> maxSlots) {
+        if (castingAttribute == null) {
+            throw new IllegalArgumentException("Casting attribute cannot be null");
+        }
+        if (maxSlots == null || maxSlots.size() != 10) {
+            throw new IllegalArgumentException("Max slots must have exactly 10 elements");
+        }
+        return characterStore.findById(id).map(c -> {
+            SpellcastingFeature sf = new SpellcastingFeature(casterLevel, castingAttribute);
+            for (int i = 0; i <= 9; i++) {
+                sf.setMaxSlots(i, maxSlots.get(i));
+                sf.setRemainingSlots(i, maxSlots.get(i));
+            }
+            c.setSpellcastingFeature(sf);
+            return characterStore.save(c);
+        });
+    }
+
+    public Optional<Character> consumeSpellSlot(String id, int spellLevel) {
+        return characterStore.findById(id).map(c -> {
+            if (c.getSpellcastingFeature() == null) {
+                throw new IllegalStateException("Character has no spellcasting feature");
+            }
+            c.getSpellcastingFeature().consumeSlot(spellLevel);
             return characterStore.save(c);
         });
     }

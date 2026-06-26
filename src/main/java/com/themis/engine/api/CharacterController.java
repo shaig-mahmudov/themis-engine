@@ -2,6 +2,7 @@ package com.themis.engine.api;
 
 import com.themis.engine.domain.Character;
 import com.themis.engine.domain.CharacterService;
+import com.themis.engine.domain.StatType;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -139,6 +140,38 @@ public class CharacterController {
         @RequestParam com.themis.engine.domain.ActionType type
     ) {
         return characterService.consumeAction(id, type)
+            .map(CharacterResponseDto::fromDomain)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/spellcasting")
+    public ResponseEntity<CharacterResponseDto> configureSpellcasting(
+        @PathVariable String id,
+        @Valid @RequestBody ConfigureSpellcastingRequestDto request
+    ) {
+        StatType attribute;
+        try {
+            attribute = StatType.valueOf(request.castingAttribute().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid casting attribute: " + request.castingAttribute());
+        }
+
+        return characterService.configureSpellcasting(id, request.casterLevel(), attribute, request.maxSlots())
+            .map(CharacterResponseDto::fromDomain)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/spellcasting/consume-slot")
+    public ResponseEntity<CharacterResponseDto> consumeSpellSlot(
+        @PathVariable String id,
+        @RequestParam int spellLevel
+    ) {
+        if (spellLevel < 0 || spellLevel > 9) {
+            throw new IllegalArgumentException("Spell level must be between 0 and 9");
+        }
+        return characterService.consumeSpellSlot(id, spellLevel)
             .map(CharacterResponseDto::fromDomain)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());

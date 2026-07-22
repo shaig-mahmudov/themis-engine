@@ -52,6 +52,7 @@ public class PostgresCharacterRepositoryAdapter implements CharacterStore {
     private CharacterEntity toEntity(Character domain) {
         CharacterEntity entity = new CharacterEntity();
         entity.setId(domain.getId());
+        entity.setVersion(domain.getVersion());
         entity.setName(domain.getName());
         entity.setLevel(domain.getLevel());
         
@@ -275,6 +276,7 @@ public class PostgresCharacterRepositoryAdapter implements CharacterStore {
         }
 
         // Restore turn state
+        domain.restoreVersion(entity.getVersion());
         domain.getTurnState().restore(entity.isStandardUsed(), entity.isMoveUsed(), entity.isSwiftUsed());
 
         return domain;

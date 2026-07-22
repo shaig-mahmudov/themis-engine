@@ -13,6 +13,10 @@ public class CharacterEntity {
     @Id
     private String id;
 
+    @Version
+    @Column(nullable = false)
+    private Long version;
+
     @Column(nullable = false)
     private String name;
 
@@ -104,6 +108,14 @@ public class CharacterEntity {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
     }
 
     public String getName() {

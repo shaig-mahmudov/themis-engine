@@ -48,6 +48,7 @@ public class PostgresEncounterRepositoryAdapter implements EncounterStore {
     private EncounterEntity toEntity(Encounter domain) {
         EncounterEntity entity = new EncounterEntity();
         entity.setId(domain.getId());
+        entity.setVersion(domain.getVersion());
         entity.setName(domain.getName());
         entity.setStatus(domain.getStatus().name());
         entity.setCurrentRound(domain.getCurrentRound());
@@ -83,7 +84,7 @@ public class PostgresEncounterRepositoryAdapter implements EncounterStore {
             ));
         }
 
-        return new Encounter(
+        Encounter encounter = new Encounter(
             entity.getId(),
             entity.getName(),
             EncounterStatus.valueOf(entity.getStatus()),
@@ -91,5 +92,7 @@ public class PostgresEncounterRepositoryAdapter implements EncounterStore {
             entity.getActiveParticipantIndex(),
             domainParticipants
         );
+        encounter.restoreVersion(entity.getVersion());
+        return encounter;
     }
 }

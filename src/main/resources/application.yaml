@@ -4,12 +4,13 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/themis_db}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:password}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: validate
+    open-in-view: false
     show-sql: ${SPRING_JPA_SHOW_SQL:false}
   flyway:
     enabled: true
@@ -18,10 +19,18 @@ spring:
     type: ${SPRING_CACHE_TYPE:redis}
 
 themis:
-  api-key: ${THEMIS_API_KEY:default-dev-key}
+  api-key: ${THEMIS_API_KEY}
+  cors:
+    allowed-origins: ${THEMIS_CORS_ALLOWED_ORIGINS}
+  rate-limit:
+    trust-forwarded-headers: ${THEMIS_TRUST_FORWARDED_HEADERS:false}
+    max-clients: ${THEMIS_RATE_LIMIT_MAX_CLIENTS:10000}
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,prometheus
+        include: health
+  endpoint:
+    health:
+      show-details: never

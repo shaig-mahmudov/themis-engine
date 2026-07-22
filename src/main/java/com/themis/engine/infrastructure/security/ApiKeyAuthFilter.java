@@ -10,11 +10,16 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 public class ApiKeyAuthFilter extends OncePerRequestFilter {
     private final String expectedApiKey;
 
     public ApiKeyAuthFilter(String expectedApiKey) {
+        if (expectedApiKey == null || expectedApiKey.isBlank()) {
+            throw new IllegalStateException("THEMIS_API_KEY must be configured");
+        }
         this.expectedApiKey = expectedApiKey;
     }
 
@@ -33,7 +38,7 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
                 return;
             }
             
-            if (!expectedApiKey.equals(requestKey)) {
+            if (!secureEquals(expectedApiKey, requestKey)) {
                 writeErrorResponse(response, HttpStatus.UNAUTHORIZED, "Invalid API Key", "The provided 'X-API-KEY' is invalid.");
                 return;
             }
@@ -43,6 +48,13 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
         }
         
         filterChain.doFilter(request, response);
+    }
+
+    private boolean secureEquals(String expected, String actual) {
+        return MessageDigest.isEqual(
+            expected.getBytes(StandardCharsets.UTF_8),
+            actual.getBytes(StandardCharsets.UTF_8)
+        );
     }
 
     private void writeErrorResponse(HttpServletResponse response, HttpStatus status, String error, String message) throws IOException {

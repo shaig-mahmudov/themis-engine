@@ -86,6 +86,10 @@ class PostgresEncounterRepositoryAdapterTest {
             List.of(lp2, lp1) // Sorted: Lair Spike (20), Valeros (14)
         );
 
+        // This is an update of an existing aggregate, so preserve the
+        // optimistic-lock token restored by the repository.
+        loadedForFight.restoreVersion(loaded.getVersion());
+
         encounterStore.save(loadedForFight);
 
         // Load again

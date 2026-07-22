@@ -14,6 +14,7 @@ public class Character implements java.io.Serializable {
     private final String id;
     private final String name;
     private final int level;
+    private Long version;
 
     // Attributes
     private final Map<StatType, Attribute> attributes = new HashMap<>();
@@ -77,6 +78,7 @@ public class Character implements java.io.Serializable {
         this.id = id;
         this.name = name;
         this.level = level;
+        this.version = null;
 
         // Initialize Attributes
         this.attributes.put(StatType.STRENGTH, new Attribute(baseStr));
@@ -110,6 +112,21 @@ public class Character implements java.io.Serializable {
 
     public int getLevel() {
         return level;
+    }
+
+    /**
+     * Persistence concurrency token. New aggregates have a null version until
+     * their first successful save; repository adapters restore it afterwards.
+     */
+    public Long getVersion() {
+        return version;
+    }
+
+    public void restoreVersion(Long version) {
+        if (version != null && version < 0) {
+            throw new IllegalArgumentException("Character version cannot be negative");
+        }
+        this.version = version;
     }
 
     public int getAttributeScore(StatType type) {

@@ -12,6 +12,7 @@ public class Encounter implements java.io.Serializable {
 
     private final String id;
     private final String name;
+    private Long version;
     private EncounterStatus status;
     private int currentRound;
     private int activeParticipantIndex;
@@ -26,6 +27,7 @@ public class Encounter implements java.io.Serializable {
         }
         this.id = id;
         this.name = name;
+        this.version = null;
         this.status = EncounterStatus.PENDING;
         this.currentRound = 0;
         this.activeParticipantIndex = 0;
@@ -42,6 +44,7 @@ public class Encounter implements java.io.Serializable {
     ) {
         this.id = id;
         this.name = name;
+        this.version = null;
         this.status = status;
         this.currentRound = currentRound;
         this.activeParticipantIndex = activeParticipantIndex;
@@ -54,6 +57,17 @@ public class Encounter implements java.io.Serializable {
 
     public String getName() {
         return name;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void restoreVersion(Long version) {
+        if (version != null && version < 0) {
+            throw new IllegalArgumentException("Encounter version cannot be negative");
+        }
+        this.version = version;
     }
 
     public EncounterStatus getStatus() {

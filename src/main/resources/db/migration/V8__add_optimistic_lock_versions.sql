@@ -1,0 +1,5 @@
+ALTER TABLE characters
+    ADD COLUMN version BIGINT NOT NULL DEFAULT 0;
+
+ALTER TABLE encounters
+    ADD COLUMN version BIGINT NOT NULL DEFAULT 0;

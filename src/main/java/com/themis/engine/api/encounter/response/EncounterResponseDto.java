@@ -1,4 +1,4 @@
-package com.themis.engine.api;
+package com.themis.engine.api.encounter.response;
 
 import com.themis.engine.domain.Encounter;
 import com.themis.engine.domain.EncounterParticipant;

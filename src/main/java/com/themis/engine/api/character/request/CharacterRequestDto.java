@@ -1,4 +1,4 @@
-package com.themis.engine.api;
+package com.themis.engine.api.character.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

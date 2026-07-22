@@ -1,5 +1,7 @@
-package com.themis.engine.domain;
+package com.themis.engine.application.encounter;
 
+import com.themis.engine.domain.*;
+import com.themis.engine.domain.Character;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,7 +54,7 @@ public class EncounterService {
         String name = manualName;
 
         if (combatantType == CombatantType.CHARACTER) {
-            Character character = characterStore.findById(combatantId)
+            com.themis.engine.domain.Character character = characterStore.findById(combatantId)
                 .orElseThrow(() -> new IllegalArgumentException("Character not found: " + combatantId));
             dexMod = character.getAttributeModifier(StatType.DEXTERITY);
             name = character.getName();
@@ -83,7 +85,7 @@ public class EncounterService {
             .orElseThrow(() -> new IllegalArgumentException("Encounter not found: " + encounterId));
 
         Function<String, Integer> dexModLookup = cid -> {
-            Character character = characterStore.findById(cid)
+            com.themis.engine.domain.Character character = characterStore.findById(cid)
                 .orElseThrow(() -> new IllegalArgumentException("Character not found: " + cid));
             return character.getAttributeModifier(StatType.DEXTERITY);
         };

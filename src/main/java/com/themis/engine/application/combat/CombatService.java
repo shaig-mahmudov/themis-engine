@@ -1,5 +1,7 @@
-package com.themis.engine.domain;
+package com.themis.engine.application.combat;
 
+import com.themis.engine.domain.*;
+import com.themis.engine.domain.Character;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.random.RandomGenerator;
@@ -42,7 +44,7 @@ public class CombatService {
             throw new IllegalArgumentException("Weapon ID cannot be null or blank");
         }
 
-        Character attacker = characterStore.findById(attackerId)
+        com.themis.engine.domain.Character attacker = characterStore.findById(attackerId)
             .orElseThrow(() -> new IllegalArgumentException("Attacker character not found: " + attackerId));
         Character target = characterStore.findById(targetId)
             .orElseThrow(() -> new IllegalArgumentException("Target character not found: " + targetId));

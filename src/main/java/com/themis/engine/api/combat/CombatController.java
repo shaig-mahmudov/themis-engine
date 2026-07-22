@@ -1,7 +1,8 @@
-package com.themis.engine.api;
+package com.themis.engine.api.combat;
 
+import com.themis.engine.api.combat.request.AttackRequestDto;
 import com.themis.engine.domain.AttackResult;
-import com.themis.engine.domain.CombatService;
+import com.themis.engine.application.combat.CombatService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

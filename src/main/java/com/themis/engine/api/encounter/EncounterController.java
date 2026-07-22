@@ -1,7 +1,11 @@
-package com.themis.engine.api;
+package com.themis.engine.api.encounter;
 
+import com.themis.engine.api.encounter.request.AddParticipantRequest;
+import com.themis.engine.api.encounter.request.CreateEncounterRequest;
+import com.themis.engine.api.encounter.request.StartEncounterRequest;
+import com.themis.engine.api.encounter.response.EncounterResponseDto;
 import com.themis.engine.domain.Encounter;
-import com.themis.engine.domain.EncounterService;
+import com.themis.engine.application.encounter.EncounterService;
 import com.themis.engine.domain.EncounterStore;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;

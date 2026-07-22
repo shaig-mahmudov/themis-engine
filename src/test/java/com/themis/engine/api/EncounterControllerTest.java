@@ -1,6 +1,10 @@
 package com.themis.engine.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.themis.engine.api.character.request.CharacterRequestDto;
+import com.themis.engine.api.encounter.request.AddParticipantRequest;
+import com.themis.engine.api.encounter.request.CreateEncounterRequest;
+import com.themis.engine.api.encounter.request.StartEncounterRequest;
 import com.themis.engine.domain.CombatantType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

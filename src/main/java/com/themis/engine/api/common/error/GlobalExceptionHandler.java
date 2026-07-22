@@ -1,4 +1,4 @@
-package com.themis.engine.api;
+package com.themis.engine.api.common.error;
 
 import jakarta.persistence.OptimisticLockException;
 import org.slf4j.Logger;

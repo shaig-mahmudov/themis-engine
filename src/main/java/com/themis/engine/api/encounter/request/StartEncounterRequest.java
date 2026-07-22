@@ -1,4 +1,4 @@
-package com.themis.engine.api;
+package com.themis.engine.api.encounter.request;
 
 import java.util.Map;
 

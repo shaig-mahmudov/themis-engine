@@ -1,4 +1,4 @@
-package com.themis.engine.api;
+package com.themis.engine.api.common.error;
 
 import java.time.LocalDateTime;
 import java.util.List;

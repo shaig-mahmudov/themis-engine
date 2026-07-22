@@ -1,4 +1,4 @@
-package com.themis.engine.api;
+package com.themis.engine.api.character.response;
 
 import com.themis.engine.domain.Character;
 import com.themis.engine.domain.StatType;

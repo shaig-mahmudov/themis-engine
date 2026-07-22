@@ -1,6 +1,7 @@
 package com.themis.engine.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.themis.engine.api.combat.request.AttackRequestDto;
 import com.themis.engine.domain.*;
 import com.themis.engine.domain.Character;
 import org.junit.jupiter.api.Test;

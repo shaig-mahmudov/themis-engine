@@ -1,9 +1,18 @@
-package com.themis.engine.api;
+package com.themis.engine.api.combat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.themis.engine.api.combat.request.AttackRequest;
-import com.themis.engine.domain.*;
+import com.themis.engine.api.combat.request.ResolveAttackRequest;
 import com.themis.engine.domain.Character;
+import com.themis.engine.domain.CharacterStore;
+import com.themis.engine.domain.DiceRoll;
+import com.themis.engine.domain.EquippableItem;
+import com.themis.engine.domain.Modifier;
+import com.themis.engine.domain.ModifierSource;
+import com.themis.engine.domain.ModifierType;
+import com.themis.engine.domain.SourceType;
+import com.themis.engine.domain.StatType;
+import com.themis.engine.domain.Weapon;
+import com.themis.engine.domain.WeaponType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -12,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -54,11 +64,11 @@ class CombatControllerTest {
             10, 0, 0, 0, 0
         );
         target.equip(new EquippableItem("goblin-shield", "Shield", 
-            Map.of(StatType.ARMOR_CLASS, java.util.List.of(new Modifier(5, ModifierType.SHIELD, new ModifierSource("goblin-shield", "Shield", SourceType.ITEM))))));
+            Map.of(StatType.ARMOR_CLASS, List.of(new Modifier(5, ModifierType.SHIELD, new ModifierSource("goblin-shield", "Shield", SourceType.ITEM))))));
         characterStore.save(target);
 
         // 3. Resolve attack: d20Roll = 12. Total attack = 12 + 1 (BAB) + 2 (Str) = 15. AC is 15. -> Hit!
-        AttackRequest attackReq = new AttackRequest(
+        ResolveAttackRequest attackReq = new ResolveAttackRequest(
             "attacker-id",
             "target-id",
             "lswd",
@@ -98,7 +108,7 @@ class CombatControllerTest {
         );
         characterStore.save(target);
 
-        AttackRequest attackReq = new AttackRequest(
+        ResolveAttackRequest attackReq = new ResolveAttackRequest(
             "attacker-id-2",
             "target-id-2",
             "lswd2",

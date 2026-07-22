@@ -1,11 +1,20 @@
-package com.themis.engine.api;
+package com.themis.engine.api.character;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.themis.engine.api.character.request.CreateCharacterRequest;
+import com.themis.engine.api.character.request.ApplyConditionRequest;
 import com.themis.engine.api.character.request.ConfigureSpellcastingRequest;
+import com.themis.engine.api.character.request.CreateCharacterRequest;
 import com.themis.engine.api.character.request.EquipArmorRequest;
+import com.themis.engine.api.character.request.EquipItemRequest;
 import com.themis.engine.api.character.request.EquipWeaponRequest;
-import com.themis.engine.domain.*;
+import com.themis.engine.domain.Condition;
+import com.themis.engine.domain.EquippableItem;
+import com.themis.engine.domain.Modifier;
+import com.themis.engine.domain.ModifierSource;
+import com.themis.engine.domain.ModifierType;
+import com.themis.engine.domain.SourceType;
+import com.themis.engine.domain.StatType;
+import com.themis.engine.domain.WeaponType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -14,6 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -79,7 +89,7 @@ class CharacterControllerTest {
                 .andExpect(status().isCreated());
 
         // 2. Equip item
-        EquippableItem ring = new EquippableItem(
+        EquipItemRequest ring = new EquipItemRequest(
             "ring-protection-1",
             "Ring of Protection +1",
             Map.of(StatType.ARMOR_CLASS, List.of(new Modifier(1, ModifierType.DEFLECTION, new ModifierSource("ring", "Ring", SourceType.ITEM))))
@@ -92,10 +102,12 @@ class CharacterControllerTest {
                 .andExpect(jsonPath("$.armorClass").value(11)); // Base 10 + Dex 0 + Ring 1 = 11
 
         // 3. Apply condition
-        Condition shaken = new Condition(
+        ApplyConditionRequest shaken = new ApplyConditionRequest(
             "shaken-cond",
             "Shaken",
-            Map.of(StatType.WILL, List.of(new Modifier(-2, ModifierType.UNTYPED, new ModifierSource("fear", "Fear", SourceType.CONDITION))))
+            Map.of(StatType.WILL, List.of(new Modifier(-2, ModifierType.UNTYPED, new ModifierSource("fear", "Fear", SourceType.CONDITION)))),
+            null,
+            null
         );
         mockMvc.perform(post("/api/characters/test-char-2/apply-condition")
                 .header("X-API-KEY", "default-dev-key")
@@ -229,7 +241,7 @@ class CharacterControllerTest {
                 .andExpect(status().isCreated());
 
         // 2. Configure Spellcasting (3 Cantrips, 2 Level 1 spells)
-        java.util.List<Integer> maxSlots = java.util.Arrays.asList(3, 2, 0, 0, 0, 0, 0, 0, 0, 0);
+        List<Integer> maxSlots = Arrays.asList(3, 2, 0, 0, 0, 0, 0, 0, 0, 0);
         ConfigureSpellcastingRequest configRequest = new ConfigureSpellcastingRequest(
             1, "INTELLIGENCE", maxSlots
         );

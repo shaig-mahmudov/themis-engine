@@ -1,4 +1,4 @@
-package com.themis.engine.api;
+package com.themis.engine.api.encounter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.themis.engine.api.character.request.CreateCharacterRequest;

@@ -1,4 +1,4 @@
-package com.themis.engine.api;
+package com.themis.engine.api.common.error;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +44,7 @@ class SecurityAndRateLimitTest {
     @Test
     void testRateLimit_Exceeded_Returns429() throws Exception {
         // Send 100 requests with valid API key (default-dev-key) to trigger rate limit.
-        // We'll use a IP that is unique to this test to avoid interfering with other tests.
+        // We'll use an IP that is unique to this test to avoid interfering with other tests.
         String testIp = "192.168.1.100";
         for (int i = 0; i < 100; i++) {
             mockMvc.perform(get("/api/characters/some-id")

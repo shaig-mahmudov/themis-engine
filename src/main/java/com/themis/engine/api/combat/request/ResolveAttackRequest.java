@@ -5,9 +5,9 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * Data Transfer Object representing the request body to execute an attack.
+ * Data Transfer Object representing the request body to resolve an attack.
  */
-public record AttackRequest(
+public record ResolveAttackRequest(
     @NotBlank(message = "Attacker ID cannot be blank")
     String attackerId,
 

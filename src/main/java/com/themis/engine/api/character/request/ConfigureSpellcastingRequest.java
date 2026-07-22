@@ -1,4 +1,4 @@
-package com.themis.engine.api;
+package com.themis.engine.api.character.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Data Transfer Object representing the request body to configure character spellcasting.
  */
-public record ConfigureSpellcastingRequestDto(
+public record ConfigureSpellcastingRequest(
     @Min(value = 1, message = "Caster level must be at least 1")
     int casterLevel,
 

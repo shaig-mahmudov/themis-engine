@@ -10,7 +10,7 @@ import com.themis.engine.domain.Modifier;
 /**
  * Request DTO for equipping items to a character.
  */
-public record EquipItemRequestDto(
+public record EquipItemRequest(
     @NotBlank(message = "Item ID cannot be blank")
     String id,
 

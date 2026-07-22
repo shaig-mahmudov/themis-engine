@@ -1,8 +1,7 @@
 package com.themis.engine.api.character;
 
-import com.themis.engine.api.*;
 import com.themis.engine.api.character.request.*;
-import com.themis.engine.api.character.response.CharacterResponseDto;
+import com.themis.engine.api.character.response.CharacterResponse;
 import com.themis.engine.domain.Character;
 import com.themis.engine.application.character.CharacterService;
 import com.themis.engine.domain.StatType;
@@ -24,85 +23,85 @@ public class CharacterController {
     }
 
     @PostMapping
-    public ResponseEntity<CharacterResponseDto> createCharacter(@Valid @RequestBody CharacterRequestDto request) {
+    public ResponseEntity<CharacterResponse> createCharacter(@Valid @RequestBody CreateCharacterRequest request) {
         Character character = request.toDomain();
         Character saved = characterService.createCharacter(character);
-        return ResponseEntity.status(201).body(CharacterResponseDto.fromDomain(saved));
+        return ResponseEntity.status(201).body(CharacterResponse.fromDomain(saved));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CharacterResponseDto> getCharacter(@PathVariable String id) {
+    public ResponseEntity<CharacterResponse> getCharacter(@PathVariable String id) {
         return characterService.getCharacter(id)
-            .map(CharacterResponseDto::fromDomain)
+            .map(CharacterResponse::fromDomain)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/equip-item")
-    public ResponseEntity<CharacterResponseDto> equipItem(
+    public ResponseEntity<CharacterResponse> equipItem(
         @PathVariable String id,
-        @Valid @RequestBody EquipItemRequestDto request
+        @Valid @RequestBody EquipItemRequest request
     ) {
         return characterService.equipItem(id, request.toDomain())
-            .map(CharacterResponseDto::fromDomain)
+            .map(CharacterResponse::fromDomain)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/equip-weapon")
-    public ResponseEntity<CharacterResponseDto> equipWeapon(
+    public ResponseEntity<CharacterResponse> equipWeapon(
         @PathVariable String id,
-        @Valid @RequestBody EquipWeaponRequestDto request
+        @Valid @RequestBody EquipWeaponRequest request
     ) {
         return characterService.equipWeapon(id, request.toDomain())
-            .map(CharacterResponseDto::fromDomain)
+            .map(CharacterResponse::fromDomain)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/equip-armor")
-    public ResponseEntity<CharacterResponseDto> equipArmor(
+    public ResponseEntity<CharacterResponse> equipArmor(
         @PathVariable String id,
-        @Valid @RequestBody EquipArmorRequestDto request
+        @Valid @RequestBody EquipArmorRequest request
     ) {
         return characterService.equipArmor(id, request.toDomain())
-            .map(CharacterResponseDto::fromDomain)
+            .map(CharacterResponse::fromDomain)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/unequip-armor")
-    public ResponseEntity<CharacterResponseDto> unequipArmor(
+    public ResponseEntity<CharacterResponse> unequipArmor(
         @PathVariable String id,
         @RequestParam String armorId
     ) {
         return characterService.unequipArmor(id, armorId)
-            .map(CharacterResponseDto::fromDomain)
+            .map(CharacterResponse::fromDomain)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/apply-condition")
-    public ResponseEntity<CharacterResponseDto> applyCondition(
+    public ResponseEntity<CharacterResponse> applyCondition(
         @PathVariable String id,
-        @Valid @RequestBody ApplyConditionRequestDto request
+        @Valid @RequestBody ApplyConditionRequest request
     ) {
         return characterService.applyCondition(id, request.toDomain())
-            .map(CharacterResponseDto::fromDomain)
+            .map(CharacterResponse::fromDomain)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/rest")
-    public ResponseEntity<CharacterResponseDto> restCharacter(@PathVariable String id) {
+    public ResponseEntity<CharacterResponse> restCharacter(@PathVariable String id) {
         return characterService.restCharacter(id)
-            .map(CharacterResponseDto::fromDomain)
+            .map(CharacterResponse::fromDomain)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/damage")
-    public ResponseEntity<CharacterResponseDto> damageCharacter(
+    public ResponseEntity<CharacterResponse> damageCharacter(
         @PathVariable String id,
         @RequestParam int amount
     ) {
@@ -110,13 +109,13 @@ public class CharacterController {
             throw new IllegalArgumentException("Damage amount cannot be negative");
         }
         return characterService.damageCharacter(id, amount)
-            .map(CharacterResponseDto::fromDomain)
+            .map(CharacterResponse::fromDomain)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/heal")
-    public ResponseEntity<CharacterResponseDto> healCharacter(
+    public ResponseEntity<CharacterResponse> healCharacter(
         @PathVariable String id,
         @RequestParam int amount
     ) {
@@ -124,34 +123,34 @@ public class CharacterController {
             throw new IllegalArgumentException("Healing amount cannot be negative");
         }
         return characterService.healCharacter(id, amount)
-            .map(CharacterResponseDto::fromDomain)
+            .map(CharacterResponse::fromDomain)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/start-turn")
-    public ResponseEntity<CharacterResponseDto> startTurn(@PathVariable String id) {
+    public ResponseEntity<CharacterResponse> startTurn(@PathVariable String id) {
         return characterService.startTurn(id)
-            .map(CharacterResponseDto::fromDomain)
+            .map(CharacterResponse::fromDomain)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/consume-action")
-    public ResponseEntity<CharacterResponseDto> consumeAction(
+    public ResponseEntity<CharacterResponse> consumeAction(
         @PathVariable String id,
         @RequestParam com.themis.engine.domain.ActionType type
     ) {
         return characterService.consumeAction(id, type)
-            .map(CharacterResponseDto::fromDomain)
+            .map(CharacterResponse::fromDomain)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/spellcasting")
-    public ResponseEntity<CharacterResponseDto> configureSpellcasting(
+    public ResponseEntity<CharacterResponse> configureSpellcasting(
         @PathVariable String id,
-        @Valid @RequestBody ConfigureSpellcastingRequestDto request
+        @Valid @RequestBody ConfigureSpellcastingRequest request
     ) {
         StatType attribute;
         try {
@@ -161,13 +160,13 @@ public class CharacterController {
         }
 
         return characterService.configureSpellcasting(id, request.casterLevel(), attribute, request.maxSlots())
-            .map(CharacterResponseDto::fromDomain)
+            .map(CharacterResponse::fromDomain)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/spellcasting/consume-slot")
-    public ResponseEntity<CharacterResponseDto> consumeSpellSlot(
+    public ResponseEntity<CharacterResponse> consumeSpellSlot(
         @PathVariable String id,
         @RequestParam int spellLevel
     ) {
@@ -175,7 +174,7 @@ public class CharacterController {
             throw new IllegalArgumentException("Spell level must be between 0 and 9");
         }
         return characterService.consumeSpellSlot(id, spellLevel)
-            .map(CharacterResponseDto::fromDomain)
+            .map(CharacterResponse::fromDomain)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }

@@ -7,7 +7,7 @@ import com.themis.engine.domain.Character;
 /**
  * Data Transfer Object representing the request body to create a new Character.
  */
-public record CharacterRequestDto(
+public record CreateCharacterRequest(
     @NotBlank(message = "Character ID cannot be blank")
     String id,
 

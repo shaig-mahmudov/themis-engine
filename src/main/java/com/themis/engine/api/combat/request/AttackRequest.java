@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 /**
  * Data Transfer Object representing the request body to execute an attack.
  */
-public record AttackRequestDto(
+public record AttackRequest(
     @NotBlank(message = "Attacker ID cannot be blank")
     String attackerId,
 

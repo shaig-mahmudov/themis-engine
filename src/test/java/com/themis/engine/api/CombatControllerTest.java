@@ -1,7 +1,7 @@
 package com.themis.engine.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.themis.engine.api.combat.request.AttackRequestDto;
+import com.themis.engine.api.combat.request.AttackRequest;
 import com.themis.engine.domain.*;
 import com.themis.engine.domain.Character;
 import org.junit.jupiter.api.Test;
@@ -58,7 +58,7 @@ class CombatControllerTest {
         characterStore.save(target);
 
         // 3. Resolve attack: d20Roll = 12. Total attack = 12 + 1 (BAB) + 2 (Str) = 15. AC is 15. -> Hit!
-        AttackRequestDto attackReq = new AttackRequestDto(
+        AttackRequest attackReq = new AttackRequest(
             "attacker-id",
             "target-id",
             "lswd",
@@ -98,7 +98,7 @@ class CombatControllerTest {
         );
         characterStore.save(target);
 
-        AttackRequestDto attackReq = new AttackRequestDto(
+        AttackRequest attackReq = new AttackRequest(
             "attacker-id-2",
             "target-id-2",
             "lswd2",

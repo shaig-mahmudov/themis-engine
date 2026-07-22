@@ -15,7 +15,7 @@ import com.themis.engine.domain.WeaponType;
 /**
  * Request DTO for equipping weapons to a character.
  */
-public record EquipWeaponRequestDto(
+public record EquipWeaponRequest(
     @NotBlank(message = "Weapon ID cannot be blank")
     String id,
 

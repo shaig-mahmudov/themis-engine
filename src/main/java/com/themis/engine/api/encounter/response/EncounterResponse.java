@@ -6,7 +6,7 @@ import com.themis.engine.domain.EncounterParticipant;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public record EncounterResponseDto(
+public record EncounterResponse(
     String id,
     String name,
     String status,
@@ -15,7 +15,7 @@ public record EncounterResponseDto(
     List<ParticipantResponseDto> participants,
     ParticipantResponseDto activeParticipant
 ) {
-    public static EncounterResponseDto fromDomain(Encounter domain) {
+    public static EncounterResponse fromDomain(Encounter domain) {
         List<ParticipantResponseDto> participantsList = domain.getParticipants().stream()
             .map(ParticipantResponseDto::fromDomain)
             .collect(Collectors.toList());
@@ -24,7 +24,7 @@ public record EncounterResponseDto(
             .map(ParticipantResponseDto::fromDomain)
             .orElse(null);
 
-        return new EncounterResponseDto(
+        return new EncounterResponse(
             domain.getId(),
             domain.getName(),
             domain.getStatus().name(),

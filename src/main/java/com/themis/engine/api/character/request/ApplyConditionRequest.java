@@ -10,7 +10,7 @@ import com.themis.engine.domain.Modifier;
 /**
  * Request DTO for applying conditions to a character.
  */
-public record ApplyConditionRequestDto(
+public record ApplyConditionRequest(
     @NotBlank(message = "Condition ID cannot be blank")
     String id,
 

@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 /**
  * Data Transfer Object representing the fully computed state of a Character.
  */
-public record CharacterResponseDto(
+public record CharacterResponse(
     String id,
     String name,
     int level,
@@ -31,7 +31,7 @@ public record CharacterResponseDto(
     boolean isConscious,
     boolean isDead
 ) {
-    public static CharacterResponseDto fromDomain(Character c) {
+    public static CharacterResponse fromDomain(Character c) {
         Map<String, AttributeDto> attributesMap = Map.of(
             "STRENGTH", new AttributeDto(c.getAttributeScore(StatType.STRENGTH), c.getAttributeModifier(StatType.STRENGTH)),
             "DEXTERITY", new AttributeDto(c.getAttributeScore(StatType.DEXTERITY), c.getAttributeModifier(StatType.DEXTERITY)),
@@ -95,7 +95,7 @@ public record CharacterResponseDto(
             c.getTurnState().isSwiftUsed()
         );
 
-        return new CharacterResponseDto(
+        return new CharacterResponse(
             c.getId(),
             c.getName(),
             c.getLevel(),

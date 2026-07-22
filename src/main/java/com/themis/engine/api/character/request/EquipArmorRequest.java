@@ -11,7 +11,7 @@ import com.themis.engine.domain.StatType;
 /**
  * Request DTO for equipping armor to a character.
  */
-public record EquipArmorRequestDto(
+public record EquipArmorRequest(
     @NotBlank(message = "Armor ID cannot be blank")
     String id,
 

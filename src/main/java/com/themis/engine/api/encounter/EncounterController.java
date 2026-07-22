@@ -3,7 +3,7 @@ package com.themis.engine.api.encounter;
 import com.themis.engine.api.encounter.request.AddParticipantRequest;
 import com.themis.engine.api.encounter.request.CreateEncounterRequest;
 import com.themis.engine.api.encounter.request.StartEncounterRequest;
-import com.themis.engine.api.encounter.response.EncounterResponseDto;
+import com.themis.engine.api.encounter.response.EncounterResponse;
 import com.themis.engine.domain.Encounter;
 import com.themis.engine.application.encounter.EncounterService;
 import com.themis.engine.domain.EncounterStore;
@@ -24,21 +24,21 @@ public class EncounterController {
     }
 
     @PostMapping
-    public ResponseEntity<EncounterResponseDto> createEncounter(@Valid @RequestBody CreateEncounterRequest request) {
+    public ResponseEntity<EncounterResponse> createEncounter(@Valid @RequestBody CreateEncounterRequest request) {
         Encounter encounter = encounterService.createEncounter(request.name());
-        return ResponseEntity.status(201).body(EncounterResponseDto.fromDomain(encounter));
+        return ResponseEntity.status(201).body(EncounterResponse.fromDomain(encounter));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EncounterResponseDto> getEncounter(@PathVariable String id) {
+    public ResponseEntity<EncounterResponse> getEncounter(@PathVariable String id) {
         return encounterStore.findById(id)
-            .map(EncounterResponseDto::fromDomain)
+            .map(EncounterResponse::fromDomain)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/participants")
-    public ResponseEntity<EncounterResponseDto> addParticipant(
+    public ResponseEntity<EncounterResponse> addParticipant(
         @PathVariable String id,
         @Valid @RequestBody AddParticipantRequest request
     ) {
@@ -49,28 +49,28 @@ public class EncounterController {
             request.name(),
             request.dexterityModifier()
         );
-        return ResponseEntity.ok(EncounterResponseDto.fromDomain(encounter));
+        return ResponseEntity.ok(EncounterResponse.fromDomain(encounter));
     }
 
     @PostMapping("/{id}/start")
-    public ResponseEntity<EncounterResponseDto> startEncounter(
+    public ResponseEntity<EncounterResponse> startEncounter(
         @PathVariable String id,
         @RequestBody(required = false) StartEncounterRequest request
     ) {
         java.util.Map<String, Integer> manualRolls = request != null ? request.manualRolls() : null;
         Encounter encounter = encounterService.startEncounter(id, manualRolls);
-        return ResponseEntity.ok(EncounterResponseDto.fromDomain(encounter));
+        return ResponseEntity.ok(EncounterResponse.fromDomain(encounter));
     }
 
     @PostMapping("/{id}/next-turn")
-    public ResponseEntity<EncounterResponseDto> nextTurn(@PathVariable String id) {
+    public ResponseEntity<EncounterResponse> nextTurn(@PathVariable String id) {
         Encounter encounter = encounterService.nextTurn(id);
-        return ResponseEntity.ok(EncounterResponseDto.fromDomain(encounter));
+        return ResponseEntity.ok(EncounterResponse.fromDomain(encounter));
     }
 
     @PostMapping("/{id}/end")
-    public ResponseEntity<EncounterResponseDto> endEncounter(@PathVariable String id) {
+    public ResponseEntity<EncounterResponse> endEncounter(@PathVariable String id) {
         Encounter encounter = encounterService.endEncounter(id);
-        return ResponseEntity.ok(EncounterResponseDto.fromDomain(encounter));
+        return ResponseEntity.ok(EncounterResponse.fromDomain(encounter));
     }
 }

@@ -1,6 +1,6 @@
 package com.themis.engine.api.combat;
 
-import com.themis.engine.api.combat.request.AttackRequestDto;
+import com.themis.engine.api.combat.request.AttackRequest;
 import com.themis.engine.domain.AttackResult;
 import com.themis.engine.application.combat.CombatService;
 import jakarta.validation.Valid;
@@ -21,7 +21,7 @@ public class CombatController {
     }
 
     @PostMapping("/attack")
-    public ResponseEntity<AttackResult> resolveAttack(@Valid @RequestBody AttackRequestDto request) {
+    public ResponseEntity<AttackResult> resolveAttack(@Valid @RequestBody AttackRequest request) {
         AttackResult result = combatService.resolveAttack(
             request.attackerId(),
             request.targetId(),

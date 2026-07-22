@@ -1,9 +1,10 @@
 package com.themis.engine.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.themis.engine.api.character.request.CharacterRequestDto;
-import com.themis.engine.api.character.request.EquipArmorRequestDto;
-import com.themis.engine.api.character.request.EquipWeaponRequestDto;
+import com.themis.engine.api.character.request.CreateCharacterRequest;
+import com.themis.engine.api.character.request.ConfigureSpellcastingRequest;
+import com.themis.engine.api.character.request.EquipArmorRequest;
+import com.themis.engine.api.character.request.EquipWeaponRequest;
 import com.themis.engine.domain.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +35,7 @@ class CharacterControllerTest {
 
     @Test
     void testCreateCharacterAndGet() throws Exception {
-        CharacterRequestDto request = new CharacterRequestDto(
+        CreateCharacterRequest request = new CreateCharacterRequest(
             "test-char-1",
             "Valeros",
             3,
@@ -64,7 +65,7 @@ class CharacterControllerTest {
     @Test
     void testEquipItemAndCondition() throws Exception {
         // 1. Create character
-        CharacterRequestDto request = new CharacterRequestDto(
+        CreateCharacterRequest request = new CreateCharacterRequest(
             "test-char-2",
             "Kyra",
             2,
@@ -107,7 +108,7 @@ class CharacterControllerTest {
     @Test
     void testCreateCharacter_ValidationFailed() throws Exception {
         // Blank name and invalid level
-        CharacterRequestDto request = new CharacterRequestDto(
+        CreateCharacterRequest request = new CreateCharacterRequest(
             "test-char-3",
             "",
             0,
@@ -127,7 +128,7 @@ class CharacterControllerTest {
     @Test
     void testEquipWeapon_ValidationFailed() throws Exception {
         // Invalid critical multiplier (<2) and invalid threat min (<15)
-        EquipWeaponRequestDto request = new EquipWeaponRequestDto(
+        EquipWeaponRequest request = new EquipWeaponRequest(
             "invalid-weap",
             "Invalid Weapon",
             WeaponType.MELEE,
@@ -157,7 +158,7 @@ class CharacterControllerTest {
     @Test
     void testEquipArmor_Success() throws Exception {
         // 1. Create character with high dex (18 -> +4 mod)
-        CharacterRequestDto request = new CharacterRequestDto(
+        CreateCharacterRequest request = new CreateCharacterRequest(
             "test-char-dex",
             "Merisiel",
             1,
@@ -172,7 +173,7 @@ class CharacterControllerTest {
                 .andExpect(jsonPath("$.armorClass").value(14)); // Base 10 + Dex 4 = 14
 
         // 2. Equip Full Plate (Max Dex 1, Armor bonus +8)
-        EquipArmorRequestDto fullPlate = new EquipArmorRequestDto(
+        EquipArmorRequest fullPlate = new EquipArmorRequest(
             "full-plate-1",
             "Full Plate",
             Map.of(StatType.ARMOR_CLASS, List.of(new Modifier(8, ModifierType.ARMOR, new ModifierSource("plate-1", "Full Plate", SourceType.ITEM)))),
@@ -196,7 +197,7 @@ class CharacterControllerTest {
 
     @Test
     void testEquipArmor_ValidationFailed() throws Exception {
-        EquipArmorRequestDto request = new EquipArmorRequestDto(
+        EquipArmorRequest request = new EquipArmorRequest(
             "invalid-armor",
             "Invalid Armor",
             Map.of(),
@@ -214,7 +215,7 @@ class CharacterControllerTest {
     @Test
     void testSpellcastingFlow() throws Exception {
         // 1. Create Character
-        CharacterRequestDto createRequest = new CharacterRequestDto(
+        CreateCharacterRequest createRequest = new CreateCharacterRequest(
             "test-wizard",
             "Ezren",
             1,
@@ -229,7 +230,7 @@ class CharacterControllerTest {
 
         // 2. Configure Spellcasting (3 Cantrips, 2 Level 1 spells)
         java.util.List<Integer> maxSlots = java.util.Arrays.asList(3, 2, 0, 0, 0, 0, 0, 0, 0, 0);
-        ConfigureSpellcastingRequestDto configRequest = new ConfigureSpellcastingRequestDto(
+        ConfigureSpellcastingRequest configRequest = new ConfigureSpellcastingRequest(
             1, "INTELLIGENCE", maxSlots
         );
 

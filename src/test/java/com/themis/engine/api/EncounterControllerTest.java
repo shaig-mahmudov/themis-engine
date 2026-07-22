@@ -1,7 +1,7 @@
 package com.themis.engine.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.themis.engine.api.character.request.CharacterRequestDto;
+import com.themis.engine.api.character.request.CreateCharacterRequest;
 import com.themis.engine.api.encounter.request.AddParticipantRequest;
 import com.themis.engine.api.encounter.request.CreateEncounterRequest;
 import com.themis.engine.api.encounter.request.StartEncounterRequest;
@@ -35,7 +35,7 @@ class EncounterControllerTest {
     @Test
     void testFullEncounterFlow() throws Exception {
         // 1. Create a character to act as a participant
-        CharacterRequestDto charRequest = new CharacterRequestDto(
+        CreateCharacterRequest charRequest = new CreateCharacterRequest(
             "char-v",
             "Valeros",
             1,

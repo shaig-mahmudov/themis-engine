@@ -4,7 +4,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 import java.util.Map;
-import com.themis.engine.domain.Armor;
 import com.themis.engine.domain.Modifier;
 import com.themis.engine.domain.StatType;
 
@@ -22,13 +21,4 @@ public record EquipArmorRequest(
 
     @Min(value = 0, message = "Max dexterity bonus cannot be negative")
     Integer maxDexterityBonus
-) {
-    public Armor toDomain() {
-        return new Armor(
-            id,
-            name,
-            modifiers,
-            maxDexterityBonus
-        );
-    }
-}
+) {}

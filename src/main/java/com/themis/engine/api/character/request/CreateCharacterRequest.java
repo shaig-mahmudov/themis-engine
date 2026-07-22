@@ -2,7 +2,6 @@ package com.themis.engine.api.character.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import com.themis.engine.domain.Character;
 
 /**
  * Data Transfer Object representing the request body to create a new Character.
@@ -49,23 +48,4 @@ public record CreateCharacterRequest(
 
     @Min(value = 0, message = "Base Will Save cannot be negative")
     int baseWill
-) {
-    public Character toDomain() {
-        return new Character(
-            id,
-            name,
-            level,
-            baseStr,
-            baseDex,
-            baseCon,
-            baseInt,
-            baseWis,
-            baseCha,
-            baseHitPoints,
-            baseAttackBonus,
-            baseFortitude,
-            baseReflex,
-            baseWill
-        );
-    }
-}
+) {}

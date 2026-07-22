@@ -3,7 +3,6 @@ package com.themis.engine.api.character.request;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 import java.util.Map;
-import com.themis.engine.domain.Condition;
 import com.themis.engine.domain.StatType;
 import com.themis.engine.domain.Modifier;
 
@@ -22,8 +21,4 @@ public record ApplyConditionRequest(
     Integer durationRounds,
 
     String stackingGroup
-) {
-    public Condition toDomain() {
-        return new Condition(id, name, modifiers, durationRounds, stackingGroup);
-    }
-}
+) {}

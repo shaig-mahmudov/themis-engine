@@ -22,6 +22,7 @@ class EncounterApiMapperTest {
     @Test
     void testToResponse() {
         Encounter encounter = new Encounter("enc-1", "Goblin Fight");
+        encounter.restoreVersion(3L);
         EncounterParticipant participant = new EncounterParticipant(
             "p1", CombatantType.CHARACTER, "Valeros", 15, 17, 2
         );
@@ -31,6 +32,7 @@ class EncounterApiMapperTest {
 
         assertNotNull(response);
         assertEquals("enc-1", response.id());
+        assertEquals(3L, response.version());
         assertEquals("Goblin Fight", response.name());
         assertEquals("PENDING", response.status());
         assertEquals(1, response.participants().size());
@@ -45,7 +47,7 @@ class EncounterApiMapperTest {
     }
 
     @Test
-    void testToResponse_Null() {
-        assertNull(mapper.toResponse(null));
+    void testToResponse_NullThrowsException() {
+        assertThrows(NullPointerException.class, () -> mapper.toResponse(null));
     }
 }

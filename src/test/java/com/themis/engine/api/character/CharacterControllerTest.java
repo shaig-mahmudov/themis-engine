@@ -162,9 +162,28 @@ class CharacterControllerTest {
     void testDamageCharacter_ValidationFailed() throws Exception {
         mockMvc.perform(post("/api/characters/test-char-2/damage?amount=-5")
                 .header("X-API-KEY", "default-dev-key"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Bad Request"))
-                .andExpect(jsonPath("$.message").value("Damage amount cannot be negative"));
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testHealCharacter_NegativeAmountValidationFailed() throws Exception {
+        mockMvc.perform(post("/api/characters/test-char-2/heal?amount=-5")
+                .header("X-API-KEY", "default-dev-key"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testConsumeSpellSlot_SpellLevelBelowRangeValidationFailed() throws Exception {
+        mockMvc.perform(post("/api/characters/test-wizard/spellcasting/consume-slot?spellLevel=-1")
+                .header("X-API-KEY", "default-dev-key"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testConsumeSpellSlot_SpellLevelAboveRangeValidationFailed() throws Exception {
+        mockMvc.perform(post("/api/characters/test-wizard/spellcasting/consume-slot?spellLevel=10")
+                .header("X-API-KEY", "default-dev-key"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

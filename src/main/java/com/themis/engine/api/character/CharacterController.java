@@ -126,9 +126,6 @@ public class CharacterController {
         @PathVariable String id,
         @RequestParam @PositiveOrZero(message = "Damage amount cannot be negative") int amount
     ) {
-        if (amount < 0) {
-            throw new IllegalArgumentException("Damage amount cannot be negative");
-        }
         return characterService.damageCharacter(id, amount)
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
@@ -140,9 +137,6 @@ public class CharacterController {
         @PathVariable String id,
         @RequestParam @PositiveOrZero(message = "Healing amount cannot be negative") int amount
     ) {
-        if (amount < 0) {
-            throw new IllegalArgumentException("Healing amount cannot be negative");
-        }
         return characterService.healCharacter(id, amount)
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
@@ -191,9 +185,6 @@ public class CharacterController {
         @PathVariable String id,
         @RequestParam @Min(value = 0, message = "Spell level must be between 0 and 9") @Max(value = 9, message = "Spell level must be between 0 and 9") int spellLevel
     ) {
-        if (spellLevel < 0 || spellLevel > 9) {
-            throw new IllegalArgumentException("Spell level must be between 0 and 9");
-        }
         return characterService.consumeSpellSlot(id, spellLevel)
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)

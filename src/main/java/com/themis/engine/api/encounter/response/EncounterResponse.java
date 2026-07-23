@@ -4,6 +4,7 @@ import java.util.List;
 
 public record EncounterResponse(
     String id,
+    Long version,
     String name,
     String status,
     int currentRound,

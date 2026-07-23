@@ -1,14 +1,24 @@
 package com.themis.engine.api.character;
 
-import com.themis.engine.api.character.request.*;
+import com.themis.engine.api.character.request.ApplyConditionRequest;
+import com.themis.engine.api.character.request.CreateCharacterRequest;
+import com.themis.engine.api.character.request.EquipArmorRequest;
+import com.themis.engine.api.character.request.EquipItemRequest;
+import com.themis.engine.api.character.request.EquipWeaponRequest;
 import com.themis.engine.api.character.response.CharacterResponse;
-import com.themis.engine.domain.*;
+import com.themis.engine.domain.Armor;
 import com.themis.engine.domain.Character;
+import com.themis.engine.domain.Condition;
+import com.themis.engine.domain.DiceRoll;
+import com.themis.engine.domain.EquippableItem;
+import com.themis.engine.domain.StatType;
+import com.themis.engine.domain.Weapon;
 
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Component responsible for mapping between Character API contracts and Domain aggregates.
@@ -17,9 +27,7 @@ import java.util.Map;
 public class CharacterApiMapper {
 
     public Character toDomain(CreateCharacterRequest request) {
-        if (request == null) {
-            return null;
-        }
+        Objects.requireNonNull(request, "Create character request cannot be null");
         return new Character(
             request.id(),
             request.name(),
@@ -39,9 +47,7 @@ public class CharacterApiMapper {
     }
 
     public EquippableItem toDomain(EquipItemRequest request) {
-        if (request == null) {
-            return null;
-        }
+        Objects.requireNonNull(request, "Equip item request cannot be null");
         return new EquippableItem(
             request.id(),
             request.name(),
@@ -50,9 +56,7 @@ public class CharacterApiMapper {
     }
 
     public Weapon toDomain(EquipWeaponRequest request) {
-        if (request == null) {
-            return null;
-        }
+        Objects.requireNonNull(request, "Equip weapon request cannot be null");
         return new Weapon(
             request.id(),
             request.name(),
@@ -65,9 +69,7 @@ public class CharacterApiMapper {
     }
 
     public Armor toDomain(EquipArmorRequest request) {
-        if (request == null) {
-            return null;
-        }
+        Objects.requireNonNull(request, "Equip armor request cannot be null");
         return new Armor(
             request.id(),
             request.name(),
@@ -77,9 +79,7 @@ public class CharacterApiMapper {
     }
 
     public Condition toDomain(ApplyConditionRequest request) {
-        if (request == null) {
-            return null;
-        }
+        Objects.requireNonNull(request, "Apply condition request cannot be null");
         return new Condition(
             request.id(),
             request.name(),
@@ -90,9 +90,7 @@ public class CharacterApiMapper {
     }
 
     public CharacterResponse toResponse(Character c) {
-        if (c == null) {
-            return null;
-        }
+        Objects.requireNonNull(c, "Character cannot be null");
 
         Map<String, CharacterResponse.AttributeDto> attributesMap = Map.of(
             "STRENGTH", new CharacterResponse.AttributeDto(c.getAttributeScore(StatType.STRENGTH), c.getAttributeModifier(StatType.STRENGTH)),

@@ -6,6 +6,7 @@ import com.themis.engine.domain.EncounterParticipant;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Component responsible for mapping between Encounter API contracts and Domain objects.
@@ -14,9 +15,7 @@ import java.util.List;
 public class EncounterApiMapper {
 
     public EncounterResponse toResponse(Encounter domain) {
-        if (domain == null) {
-            return null;
-        }
+        Objects.requireNonNull(domain, "Encounter cannot be null");
 
         List<EncounterResponse.ParticipantResponseDto> participantsList = domain.getParticipants().stream()
             .map(this::toParticipantResponse)
@@ -28,6 +27,7 @@ public class EncounterApiMapper {
 
         return new EncounterResponse(
             domain.getId(),
+            domain.getVersion(),
             domain.getName(),
             domain.getStatus().name(),
             domain.getCurrentRound(),
@@ -37,10 +37,8 @@ public class EncounterApiMapper {
         );
     }
 
-    public EncounterResponse.ParticipantResponseDto toParticipantResponse(EncounterParticipant p) {
-        if (p == null) {
-            return null;
-        }
+    private EncounterResponse.ParticipantResponseDto toParticipantResponse(EncounterParticipant p) {
+        Objects.requireNonNull(p, "Encounter participant cannot be null");
         return new EncounterResponse.ParticipantResponseDto(
             p.combatantId(),
             p.combatantType().name(),

@@ -1,7 +1,14 @@
 package com.themis.engine.application.character;
 
-import com.themis.engine.domain.*;
+import com.themis.engine.domain.ActionType;
+import com.themis.engine.domain.Armor;
 import com.themis.engine.domain.Character;
+import com.themis.engine.domain.CharacterStore;
+import com.themis.engine.domain.Condition;
+import com.themis.engine.domain.EquippableItem;
+import com.themis.engine.domain.SpellcastingFeature;
+import com.themis.engine.domain.StatType;
+import com.themis.engine.domain.Weapon;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +29,7 @@ public class CharacterService {
         this.characterStore = characterStore;
     }
 
-    public com.themis.engine.domain.Character createCharacter(com.themis.engine.domain.Character character) {
+    public Character createCharacter(Character character) {
         if (character == null) {
             throw new IllegalArgumentException("Character cannot be null");
         }
@@ -30,14 +37,14 @@ public class CharacterService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<com.themis.engine.domain.Character> getCharacter(String id) {
+    public Optional<Character> getCharacter(String id) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("Character ID cannot be null or blank");
         }
         return characterStore.findById(id);
     }
 
-    public Optional<com.themis.engine.domain.Character> equipItem(String id, EquippableItem item) {
+    public Optional<Character> equipItem(String id, EquippableItem item) {
         if (item == null) {
             throw new IllegalArgumentException("Item cannot be null");
         }
@@ -47,7 +54,7 @@ public class CharacterService {
         });
     }
 
-    public Optional<com.themis.engine.domain.Character> equipWeapon(String id, Weapon weapon) {
+    public Optional<Character> equipWeapon(String id, Weapon weapon) {
         if (weapon == null) {
             throw new IllegalArgumentException("Weapon cannot be null");
         }
@@ -57,7 +64,7 @@ public class CharacterService {
         });
     }
 
-    public Optional<com.themis.engine.domain.Character> equipArmor(String id, Armor armor) {
+    public Optional<Character> equipArmor(String id, Armor armor) {
         if (armor == null) {
             throw new IllegalArgumentException("Armor cannot be null");
         }
@@ -67,7 +74,7 @@ public class CharacterService {
         });
     }
 
-    public Optional<com.themis.engine.domain.Character> unequipArmor(String id, String armorId) {
+    public Optional<Character> unequipArmor(String id, String armorId) {
         if (armorId == null || armorId.isBlank()) {
             throw new IllegalArgumentException("Armor ID cannot be null or blank");
         }
@@ -77,7 +84,7 @@ public class CharacterService {
         });
     }
 
-    public Optional<com.themis.engine.domain.Character> applyCondition(String id, Condition condition) {
+    public Optional<Character> applyCondition(String id, Condition condition) {
         if (condition == null) {
             throw new IllegalArgumentException("Condition cannot be null");
         }
@@ -87,7 +94,7 @@ public class CharacterService {
         });
     }
 
-    public Optional<com.themis.engine.domain.Character> restCharacter(String id) {
+    public Optional<Character> restCharacter(String id) {
         return characterStore.findById(id).map(c -> {
             c.getTurnState().reset();
             if (c.getSpellcastingFeature() != null) {
@@ -98,7 +105,7 @@ public class CharacterService {
         });
     }
 
-    public Optional<com.themis.engine.domain.Character> damageCharacter(String id, int amount) {
+    public Optional<Character> damageCharacter(String id, int amount) {
         if (amount < 0) {
             throw new IllegalArgumentException("Damage amount cannot be negative");
         }
@@ -108,7 +115,7 @@ public class CharacterService {
         });
     }
 
-    public Optional<com.themis.engine.domain.Character> healCharacter(String id, int amount) {
+    public Optional<Character> healCharacter(String id, int amount) {
         if (amount < 0) {
             throw new IllegalArgumentException("Healing amount cannot be negative");
         }
@@ -118,14 +125,14 @@ public class CharacterService {
         });
     }
 
-    public Optional<com.themis.engine.domain.Character> startTurn(String id) {
+    public Optional<Character> startTurn(String id) {
         return characterStore.findById(id).map(c -> {
             c.startTurn();
             return characterStore.save(c);
         });
     }
 
-    public Optional<com.themis.engine.domain.Character> consumeAction(String id, ActionType actionType) {
+    public Optional<Character> consumeAction(String id, ActionType actionType) {
         if (actionType == null) {
             throw new IllegalArgumentException("Action type cannot be null");
         }
@@ -135,7 +142,7 @@ public class CharacterService {
         });
     }
 
-    public Optional<com.themis.engine.domain.Character> configureSpellcasting(String id, int casterLevel, StatType castingAttribute, List<Integer> maxSlots) {
+    public Optional<Character> configureSpellcasting(String id, int casterLevel, StatType castingAttribute, List<Integer> maxSlots) {
         if (castingAttribute == null) {
             throw new IllegalArgumentException("Casting attribute cannot be null");
         }

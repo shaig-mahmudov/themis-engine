@@ -143,6 +143,23 @@ class ArchitectureTest {
                     );
 
     @ArchTest
+    static final ArchRule application_commands_must_be_records =
+            classes()
+                    .that()
+                    .resideInAPackage("..application..command..")
+                    .should()
+                    .beRecords();
+
+    @ArchTest
+    static final ArchRule application_commands_must_not_depend_on_api =
+            noClasses()
+                    .that()
+                    .resideInAPackage("..application..command..")
+                    .should()
+                    .dependOnClassesThat()
+                    .resideInAPackage(API_PACKAGE);
+
+    @ArchTest
     static final ArchRule application_services_must_use_explicit_names =
             classes()
                     .that()

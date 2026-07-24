@@ -1,5 +1,7 @@
 package com.themis.engine.application.encounter;
 
+import com.themis.engine.application.encounter.command.AddParticipantCommand;
+import com.themis.engine.application.encounter.command.StartEncounterCommand;
 import com.themis.engine.domain.Character;
 import com.themis.engine.domain.CharacterStore;
 import com.themis.engine.domain.CombatantType;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
@@ -45,13 +48,15 @@ public class EncounterCommandService {
         return encounterStore.save(encounter);
     }
 
-    public Encounter addParticipant(
-        String encounterId,
-        String combatantId,
-        CombatantType combatantType,
-        String manualName,
-        Integer manualDexterityModifier
-    ) {
+    public Encounter addParticipant(AddParticipantCommand command) {
+        Objects.requireNonNull(command, "Add participant command cannot be null");
+
+        String encounterId = command.encounterId();
+        String combatantId = command.combatantId();
+        CombatantType combatantType = command.combatantType();
+        String manualName = command.name();
+        Integer manualDexterityModifier = command.dexterityModifier();
+
         Encounter encounter = encounterStore.findById(encounterId)
             .orElseThrow(() -> new IllegalArgumentException("Encounter not found: " + encounterId));
 
@@ -85,7 +90,12 @@ public class EncounterCommandService {
         return encounterStore.save(encounter);
     }
 
-    public Encounter startEncounter(String encounterId, Map<String, Integer> manualRolls) {
+    public Encounter startEncounter(StartEncounterCommand command) {
+        Objects.requireNonNull(command, "Start encounter command cannot be null");
+
+        String encounterId = command.encounterId();
+        Map<String, Integer> manualRolls = command.manualRolls();
+
         Encounter encounter = encounterStore.findById(encounterId)
             .orElseThrow(() -> new IllegalArgumentException("Encounter not found: " + encounterId));
 

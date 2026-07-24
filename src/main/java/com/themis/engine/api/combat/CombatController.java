@@ -3,6 +3,7 @@ package com.themis.engine.api.combat;
 import com.themis.engine.api.combat.request.ResolveAttackRequest;
 import com.themis.engine.api.combat.response.AttackResponse;
 import com.themis.engine.application.combat.CombatCommandService;
+import com.themis.engine.application.combat.command.ResolveAttackCommand;
 import com.themis.engine.domain.AttackResult;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -28,12 +29,13 @@ public class CombatController {
 
     @PostMapping("/attack")
     public ResponseEntity<AttackResponse> resolveAttack(@Valid @RequestBody ResolveAttackRequest request) {
-        AttackResult result = combatCommandService.resolveAttack(
+        ResolveAttackCommand command = new ResolveAttackCommand(
             request.attackerId(),
             request.targetId(),
             request.weaponId(),
             request.d20Roll()
         );
+        AttackResult result = combatCommandService.resolveAttack(command);
         return ResponseEntity.ok(mapper.toResponse(result));
     }
 }

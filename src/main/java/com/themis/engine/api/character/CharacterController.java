@@ -9,6 +9,7 @@ import com.themis.engine.api.character.request.EquipWeaponRequest;
 import com.themis.engine.api.character.response.CharacterResponse;
 import com.themis.engine.application.character.CharacterCommandService;
 import com.themis.engine.application.character.CharacterQueryService;
+import com.themis.engine.application.character.command.ConfigureSpellcastingCommand;
 import com.themis.engine.domain.ActionType;
 import com.themis.engine.domain.Character;
 import com.themis.engine.domain.StatType;
@@ -181,7 +182,14 @@ public class CharacterController {
             throw new IllegalArgumentException("Invalid casting attribute: " + request.castingAttribute());
         }
 
-        return characterCommandService.configureSpellcasting(id, request.casterLevel(), attribute, request.maxSlots())
+        ConfigureSpellcastingCommand command = new ConfigureSpellcastingCommand(
+            id,
+            request.casterLevel(),
+            attribute,
+            request.maxSlots()
+        );
+
+        return characterCommandService.configureSpellcasting(command)
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());

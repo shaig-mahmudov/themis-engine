@@ -1,5 +1,6 @@
 package com.themis.engine.application.character;
 
+import com.themis.engine.application.character.command.ConfigureSpellcastingCommand;
 import com.themis.engine.domain.ActionType;
 import com.themis.engine.domain.Armor;
 import com.themis.engine.domain.Character;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -133,7 +135,14 @@ public class CharacterCommandService {
         });
     }
 
-    public Optional<Character> configureSpellcasting(String id, int casterLevel, StatType castingAttribute, List<Integer> maxSlots) {
+    public Optional<Character> configureSpellcasting(ConfigureSpellcastingCommand command) {
+        Objects.requireNonNull(command, "Configure spellcasting command cannot be null");
+
+        String id = command.characterId();
+        int casterLevel = command.casterLevel();
+        StatType castingAttribute = command.castingAttribute();
+        List<Integer> maxSlots = command.maxSlots();
+
         if (castingAttribute == null) {
             throw new IllegalArgumentException("Casting attribute cannot be null");
         }

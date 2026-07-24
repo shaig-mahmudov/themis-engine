@@ -1,5 +1,6 @@
 package com.themis.engine.application.combat;
 
+import com.themis.engine.application.combat.command.ResolveAttackCommand;
 import com.themis.engine.domain.ActionType;
 import com.themis.engine.domain.AttackResult;
 import com.themis.engine.domain.Character;
@@ -9,6 +10,7 @@ import com.themis.engine.domain.Weapon;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
 import java.util.random.RandomGenerator;
 
 /**
@@ -32,12 +34,14 @@ public class CombatCommandService {
         this.random = random;
     }
 
-    public AttackResult resolveAttack(
-        String attackerId,
-        String targetId,
-        String weaponId,
-        Integer d20Roll
-    ) {
+    public AttackResult resolveAttack(ResolveAttackCommand command) {
+        Objects.requireNonNull(command, "Resolve attack command cannot be null");
+
+        String attackerId = command.attackerId();
+        String targetId = command.targetId();
+        String weaponId = command.weaponId();
+        Integer d20Roll = command.d20Roll();
+
         if (attackerId == null || attackerId.isBlank()) {
             throw new IllegalArgumentException("Attacker ID cannot be null or blank");
         }

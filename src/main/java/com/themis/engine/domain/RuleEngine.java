@@ -1,12 +1,10 @@
 package com.themis.engine.domain;
 
-import org.springframework.stereotype.Service;
 import java.util.random.RandomGenerator;
 
 /**
  * A stateless domain service that acts as the combat referee in Pathfinder 1e rules.
  */
-@Service
 public class RuleEngine {
 
     /**

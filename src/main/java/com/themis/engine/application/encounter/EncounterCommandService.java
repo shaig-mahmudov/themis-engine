@@ -17,17 +17,17 @@ import java.util.function.Function;
 import java.util.random.RandomGenerator;
 
 /**
- * Service that orchestrates Encounter use cases.
+ * Service that orchestrates state-changing encounter use cases.
  */
 @Service
 @Transactional
-public class EncounterService {
+public class EncounterCommandService {
 
     private final EncounterStore encounterStore;
     private final CharacterStore characterStore;
     private final RandomGenerator random;
 
-    public EncounterService(
+    public EncounterCommandService(
         EncounterStore encounterStore,
         CharacterStore characterStore,
         RandomGenerator random
@@ -45,14 +45,6 @@ public class EncounterService {
         return encounterStore.save(encounter);
     }
 
-    @Transactional(readOnly = true)
-    public Optional<Encounter> getEncounter(String id) {
-        if (id == null || id.isBlank()) {
-            throw new IllegalArgumentException("Encounter ID cannot be null or blank");
-        }
-        return encounterStore.findById(id);
-    }
-
     public Encounter addParticipant(
         String encounterId,
         String combatantId,
@@ -63,20 +55,20 @@ public class EncounterService {
         Encounter encounter = encounterStore.findById(encounterId)
             .orElseThrow(() -> new IllegalArgumentException("Encounter not found: " + encounterId));
 
-        int dexMod = 0;
+        int dexterityModifier = 0;
         String name = manualName;
 
         if (combatantType == CombatantType.CHARACTER) {
             Character character = characterStore.findById(combatantId)
                 .orElseThrow(() -> new IllegalArgumentException("Character not found: " + combatantId));
-            dexMod = character.getAttributeModifier(StatType.DEXTERITY);
+            dexterityModifier = character.getAttributeModifier(StatType.DEXTERITY);
             name = character.getName();
         } else {
             if (name == null || name.isBlank()) {
                 throw new IllegalArgumentException("Name must be provided for non-character combatants");
             }
             if (manualDexterityModifier != null) {
-                dexMod = manualDexterityModifier;
+                dexterityModifier = manualDexterityModifier;
             }
         }
 
@@ -86,7 +78,7 @@ public class EncounterService {
             name,
             null,
             null,
-            dexMod
+            dexterityModifier
         );
 
         encounter.addParticipant(participant);
@@ -97,15 +89,14 @@ public class EncounterService {
         Encounter encounter = encounterStore.findById(encounterId)
             .orElseThrow(() -> new IllegalArgumentException("Encounter not found: " + encounterId));
 
-        Function<String, Integer> dexModLookup = cid -> {
-            Character character = characterStore.findById(cid)
-                .orElseThrow(() -> new IllegalArgumentException("Character not found: " + cid));
+        Function<String, Integer> dexModLookup = combatantId -> {
+            Character character = characterStore.findById(combatantId)
+                .orElseThrow(() -> new IllegalArgumentException("Character not found: " + combatantId));
             return character.getAttributeModifier(StatType.DEXTERITY);
         };
 
         encounter.start(manualRolls, random, dexModLookup);
         triggerStartTurnIfCharacter(encounter);
-        
         return encounterStore.save(encounter);
     }
 
@@ -115,7 +106,6 @@ public class EncounterService {
 
         encounter.nextTurn();
         triggerStartTurnIfCharacter(encounter);
-
         return encounterStore.save(encounter);
     }
 
@@ -128,15 +118,13 @@ public class EncounterService {
     }
 
     private void triggerStartTurnIfCharacter(Encounter encounter) {
-        Optional<EncounterParticipant> activeOpt = encounter.getActiveParticipant();
-        if (activeOpt.isPresent()) {
-            EncounterParticipant active = activeOpt.get();
-            if (active.combatantType() == CombatantType.CHARACTER) {
-                Character character = characterStore.findById(active.combatantId())
-                    .orElseThrow(() -> new IllegalArgumentException("Active character participant not found in CharacterStore: " + active.combatantId()));
-                character.startTurn();
-                characterStore.save(character);
-            }
+        Optional<EncounterParticipant> activeParticipant = encounter.getActiveParticipant();
+        if (activeParticipant.isPresent() && activeParticipant.get().combatantType() == CombatantType.CHARACTER) {
+            String characterId = activeParticipant.get().combatantId();
+            Character character = characterStore.findById(characterId)
+                .orElseThrow(() -> new IllegalArgumentException("Active character participant not found in CharacterStore: " + characterId));
+            character.startTurn();
+            characterStore.save(character);
         }
     }
 }

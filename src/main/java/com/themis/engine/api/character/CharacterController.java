@@ -7,7 +7,8 @@ import com.themis.engine.api.character.request.EquipArmorRequest;
 import com.themis.engine.api.character.request.EquipItemRequest;
 import com.themis.engine.api.character.request.EquipWeaponRequest;
 import com.themis.engine.api.character.response.CharacterResponse;
-import com.themis.engine.application.character.CharacterService;
+import com.themis.engine.application.character.CharacterCommandService;
+import com.themis.engine.application.character.CharacterQueryService;
 import com.themis.engine.domain.ActionType;
 import com.themis.engine.domain.Character;
 import com.themis.engine.domain.StatType;
@@ -35,24 +36,30 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 public class CharacterController {
 
-    private final CharacterService characterService;
+    private final CharacterCommandService characterCommandService;
+    private final CharacterQueryService characterQueryService;
     private final CharacterApiMapper mapper;
 
-    public CharacterController(CharacterService characterService, CharacterApiMapper mapper) {
-        this.characterService = characterService;
+    public CharacterController(
+        CharacterCommandService characterCommandService,
+        CharacterQueryService characterQueryService,
+        CharacterApiMapper mapper
+    ) {
+        this.characterCommandService = characterCommandService;
+        this.characterQueryService = characterQueryService;
         this.mapper = mapper;
     }
 
     @PostMapping
     public ResponseEntity<CharacterResponse> createCharacter(@Valid @RequestBody CreateCharacterRequest request) {
         Character character = mapper.toDomain(request);
-        Character saved = characterService.createCharacter(character);
+        Character saved = characterCommandService.createCharacter(character);
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(saved));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<CharacterResponse> getCharacter(@PathVariable String id) {
-        return characterService.getCharacter(id)
+        return characterQueryService.getCharacter(id)
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
@@ -63,7 +70,7 @@ public class CharacterController {
         @PathVariable String id,
         @Valid @RequestBody EquipItemRequest request
     ) {
-        return characterService.equipItem(id, mapper.toDomain(request))
+        return characterCommandService.equipItem(id, mapper.toDomain(request))
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
@@ -74,7 +81,7 @@ public class CharacterController {
         @PathVariable String id,
         @Valid @RequestBody EquipWeaponRequest request
     ) {
-        return characterService.equipWeapon(id, mapper.toDomain(request))
+        return characterCommandService.equipWeapon(id, mapper.toDomain(request))
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
@@ -85,7 +92,7 @@ public class CharacterController {
         @PathVariable String id,
         @Valid @RequestBody EquipArmorRequest request
     ) {
-        return characterService.equipArmor(id, mapper.toDomain(request))
+        return characterCommandService.equipArmor(id, mapper.toDomain(request))
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
@@ -96,7 +103,7 @@ public class CharacterController {
         @PathVariable String id,
         @RequestParam String armorId
     ) {
-        return characterService.unequipArmor(id, armorId)
+        return characterCommandService.unequipArmor(id, armorId)
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
@@ -107,7 +114,7 @@ public class CharacterController {
         @PathVariable String id,
         @Valid @RequestBody ApplyConditionRequest request
     ) {
-        return characterService.applyCondition(id, mapper.toDomain(request))
+        return characterCommandService.applyCondition(id, mapper.toDomain(request))
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
@@ -115,7 +122,7 @@ public class CharacterController {
 
     @PostMapping("/{id}/rest")
     public ResponseEntity<CharacterResponse> restCharacter(@PathVariable String id) {
-        return characterService.restCharacter(id)
+        return characterCommandService.restCharacter(id)
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
@@ -126,7 +133,7 @@ public class CharacterController {
         @PathVariable String id,
         @RequestParam @PositiveOrZero(message = "Damage amount cannot be negative") int amount
     ) {
-        return characterService.damageCharacter(id, amount)
+        return characterCommandService.damageCharacter(id, amount)
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
@@ -137,7 +144,7 @@ public class CharacterController {
         @PathVariable String id,
         @RequestParam @PositiveOrZero(message = "Healing amount cannot be negative") int amount
     ) {
-        return characterService.healCharacter(id, amount)
+        return characterCommandService.healCharacter(id, amount)
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
@@ -145,7 +152,7 @@ public class CharacterController {
 
     @PostMapping("/{id}/start-turn")
     public ResponseEntity<CharacterResponse> startTurn(@PathVariable String id) {
-        return characterService.startTurn(id)
+        return characterCommandService.startTurn(id)
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
@@ -156,7 +163,7 @@ public class CharacterController {
         @PathVariable String id,
         @RequestParam ActionType type
     ) {
-        return characterService.consumeAction(id, type)
+        return characterCommandService.consumeAction(id, type)
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
@@ -174,7 +181,7 @@ public class CharacterController {
             throw new IllegalArgumentException("Invalid casting attribute: " + request.castingAttribute());
         }
 
-        return characterService.configureSpellcasting(id, request.casterLevel(), attribute, request.maxSlots())
+        return characterCommandService.configureSpellcasting(id, request.casterLevel(), attribute, request.maxSlots())
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
@@ -185,7 +192,7 @@ public class CharacterController {
         @PathVariable String id,
         @RequestParam @Min(value = 0, message = "Spell level must be between 0 and 9") @Max(value = 9, message = "Spell level must be between 0 and 9") int spellLevel
     ) {
-        return characterService.consumeSpellSlot(id, spellLevel)
+        return characterCommandService.consumeSpellSlot(id, spellLevel)
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());

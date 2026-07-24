@@ -16,16 +16,15 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Service that orchestrates use cases related to characters.
- * Enforces transaction boundaries for read-modify-write operations.
+ * Service that orchestrates state-changing character use cases.
  */
 @Service
 @Transactional
-public class CharacterService {
+public class CharacterCommandService {
 
     private final CharacterStore characterStore;
 
-    public CharacterService(CharacterStore characterStore) {
+    public CharacterCommandService(CharacterStore characterStore) {
         this.characterStore = characterStore;
     }
 
@@ -34,14 +33,6 @@ public class CharacterService {
             throw new IllegalArgumentException("Character cannot be null");
         }
         return characterStore.save(character);
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<Character> getCharacter(String id) {
-        if (id == null || id.isBlank()) {
-            throw new IllegalArgumentException("Character ID cannot be null or blank");
-        }
-        return characterStore.findById(id);
     }
 
     public Optional<Character> equipItem(String id, EquippableItem item) {
@@ -100,7 +91,7 @@ public class CharacterService {
             if (c.getSpellcastingFeature() != null) {
                 c.getSpellcastingFeature().restAndRecover();
             }
-            c.heal(c.getMaxHitPoints()); // Rest heals characters to full HP
+            c.heal(c.getMaxHitPoints());
             return characterStore.save(c);
         });
     }
@@ -150,12 +141,12 @@ public class CharacterService {
             throw new IllegalArgumentException("Max slots must have exactly 10 elements");
         }
         return characterStore.findById(id).map(c -> {
-            SpellcastingFeature sf = new SpellcastingFeature(casterLevel, castingAttribute);
+            SpellcastingFeature spellcastingFeature = new SpellcastingFeature(casterLevel, castingAttribute);
             for (int i = 0; i <= 9; i++) {
-                sf.setMaxSlots(i, maxSlots.get(i));
-                sf.setRemainingSlots(i, maxSlots.get(i));
+                spellcastingFeature.setMaxSlots(i, maxSlots.get(i));
+                spellcastingFeature.setRemainingSlots(i, maxSlots.get(i));
             }
-            c.setSpellcastingFeature(sf);
+            c.setSpellcastingFeature(spellcastingFeature);
             return characterStore.save(c);
         });
     }

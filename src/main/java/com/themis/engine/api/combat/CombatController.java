@@ -2,7 +2,7 @@ package com.themis.engine.api.combat;
 
 import com.themis.engine.api.combat.request.ResolveAttackRequest;
 import com.themis.engine.api.combat.response.AttackResponse;
-import com.themis.engine.application.combat.CombatService;
+import com.themis.engine.application.combat.CombatCommandService;
 import com.themis.engine.domain.AttackResult;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -18,17 +18,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/combat")
 public class CombatController {
 
-    private final CombatService combatService;
+    private final CombatCommandService combatCommandService;
     private final CombatApiMapper mapper;
 
-    public CombatController(CombatService combatService, CombatApiMapper mapper) {
-        this.combatService = combatService;
+    public CombatController(CombatCommandService combatCommandService, CombatApiMapper mapper) {
+        this.combatCommandService = combatCommandService;
         this.mapper = mapper;
     }
 
     @PostMapping("/attack")
     public ResponseEntity<AttackResponse> resolveAttack(@Valid @RequestBody ResolveAttackRequest request) {
-        AttackResult result = combatService.resolveAttack(
+        AttackResult result = combatCommandService.resolveAttack(
             request.attackerId(),
             request.targetId(),
             request.weaponId(),

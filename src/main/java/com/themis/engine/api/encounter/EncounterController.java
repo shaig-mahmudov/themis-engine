@@ -4,7 +4,8 @@ import com.themis.engine.api.encounter.request.AddParticipantRequest;
 import com.themis.engine.api.encounter.request.CreateEncounterRequest;
 import com.themis.engine.api.encounter.request.StartEncounterRequest;
 import com.themis.engine.api.encounter.response.EncounterResponse;
-import com.themis.engine.application.encounter.EncounterService;
+import com.themis.engine.application.encounter.EncounterCommandService;
+import com.themis.engine.application.encounter.EncounterQueryService;
 import com.themis.engine.domain.Encounter;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -22,23 +23,29 @@ import java.util.Map;
 @RequestMapping("/api/encounters")
 public class EncounterController {
 
-    private final EncounterService encounterService;
+    private final EncounterCommandService encounterCommandService;
+    private final EncounterQueryService encounterQueryService;
     private final EncounterApiMapper mapper;
 
-    public EncounterController(EncounterService encounterService, EncounterApiMapper mapper) {
-        this.encounterService = encounterService;
+    public EncounterController(
+        EncounterCommandService encounterCommandService,
+        EncounterQueryService encounterQueryService,
+        EncounterApiMapper mapper
+    ) {
+        this.encounterCommandService = encounterCommandService;
+        this.encounterQueryService = encounterQueryService;
         this.mapper = mapper;
     }
 
     @PostMapping
     public ResponseEntity<EncounterResponse> createEncounter(@Valid @RequestBody CreateEncounterRequest request) {
-        Encounter encounter = encounterService.createEncounter(request.name());
+        Encounter encounter = encounterCommandService.createEncounter(request.name());
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(encounter));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<EncounterResponse> getEncounter(@PathVariable String id) {
-        return encounterService.getEncounter(id)
+        return encounterQueryService.getEncounter(id)
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
@@ -49,7 +56,7 @@ public class EncounterController {
         @PathVariable String id,
         @Valid @RequestBody AddParticipantRequest request
     ) {
-        Encounter encounter = encounterService.addParticipant(
+        Encounter encounter = encounterCommandService.addParticipant(
             id,
             request.combatantId(),
             request.combatantType(),
@@ -65,19 +72,19 @@ public class EncounterController {
         @RequestBody(required = false) StartEncounterRequest request
     ) {
         Map<String, Integer> manualRolls = request != null ? request.manualRolls() : null;
-        Encounter encounter = encounterService.startEncounter(id, manualRolls);
+        Encounter encounter = encounterCommandService.startEncounter(id, manualRolls);
         return ResponseEntity.ok(mapper.toResponse(encounter));
     }
 
     @PostMapping("/{id}/next-turn")
     public ResponseEntity<EncounterResponse> nextTurn(@PathVariable String id) {
-        Encounter encounter = encounterService.nextTurn(id);
+        Encounter encounter = encounterCommandService.nextTurn(id);
         return ResponseEntity.ok(mapper.toResponse(encounter));
     }
 
     @PostMapping("/{id}/end")
     public ResponseEntity<EncounterResponse> endEncounter(@PathVariable String id) {
-        Encounter encounter = encounterService.endEncounter(id);
+        Encounter encounter = encounterCommandService.endEncounter(id);
         return ResponseEntity.ok(mapper.toResponse(encounter));
     }
 }

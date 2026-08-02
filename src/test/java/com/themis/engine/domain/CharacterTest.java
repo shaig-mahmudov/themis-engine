@@ -148,6 +148,34 @@ class CharacterTest {
     }
 
     @Test
+    void testRemoveConditionById() {
+        Condition sickened = new Condition(
+            "cond-sickened",
+            "Sickened",
+            Map.of(StatType.FORTITUDE, List.of(new Modifier(-2, ModifierType.UNTYPED, new ModifierSource("cond-sickened", "Sickened", SourceType.CONDITION))))
+        );
+
+        fighter.applyCondition(sickened);
+        assertEquals(2, fighter.getSave(StatType.FORTITUDE));
+        assertEquals(1, fighter.getActiveConditions().size());
+
+        // Idempotent for unknown ID
+        fighter.removeConditionById("unknown");
+        assertEquals(2, fighter.getSave(StatType.FORTITUDE));
+        assertEquals(1, fighter.getActiveConditions().size());
+
+        // Rejects blank
+        assertThrows(IllegalArgumentException.class, () -> fighter.removeConditionById(" "));
+        assertThrows(IllegalArgumentException.class, () -> fighter.removeConditionById(""));
+        assertThrows(IllegalArgumentException.class, () -> fighter.removeConditionById(null));
+
+        // Successfully removes
+        fighter.removeConditionById("cond-sickened");
+        assertEquals(4, fighter.getSave(StatType.FORTITUDE));
+        assertTrue(fighter.getActiveConditions().isEmpty());
+    }
+
+    @Test
     void testDamageHealingConsciousnessAndDeath() {
         // Max HP = 12. Con score = 14.
         assertEquals(12, fighter.getMaxHitPoints());

@@ -29,6 +29,7 @@ import java.util.Map;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -304,4 +305,42 @@ class CharacterControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.spellcasting.remainingSlots[1]").value(2));
     }
+    @Test
+    void testRemoveConditionFlow() throws Exception {
+        // 1. Create character
+        CreateCharacterRequest createRequest = new CreateCharacterRequest(
+            "test-char-condition",
+            "Amiri",
+            1,
+            12, 10, 10, 10, 10, 10,
+            12, 1, 0, 0, 0
+        );
+        mockMvc.perform(post("/api/characters")
+                .header("X-API-KEY", "default-dev-key")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createRequest)))
+                .andExpect(status().isCreated());
+
+        // 2. Apply condition modifying statistic
+        ApplyConditionRequest sickened = new ApplyConditionRequest(
+            "cond-sick", "Sickened",
+            Map.of(StatType.FORTITUDE, List.of(new Modifier(-2, ModifierType.UNTYPED, new ModifierSource("cond-sick", "Sickened", SourceType.CONDITION)))),
+            null, null
+        );
+        mockMvc.perform(post("/api/characters/test-char-condition/apply-condition")
+                .header("X-API-KEY", "default-dev-key")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(sickened)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fortitudeSave").value(-2)) // Base 0 - 2 = -2
+                .andExpect(jsonPath("$.activeConditions[0].id").value("cond-sick"));
+
+        // 3. Delete condition through endpoint
+        mockMvc.perform(delete("/api/characters/test-char-condition/conditions/cond-sick")
+                .header("X-API-KEY", "default-dev-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fortitudeSave").value(0)) // baseFortitude is 0
+                .andExpect(jsonPath("$.activeConditions").isEmpty());
+    }
+
 }

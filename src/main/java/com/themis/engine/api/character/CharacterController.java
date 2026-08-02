@@ -24,6 +24,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -105,6 +106,17 @@ public class CharacterController {
         @RequestParam String armorId
     ) {
         return characterCommandService.unequipArmor(id, armorId)
+            .map(mapper::toResponse)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}/conditions/{conditionId}")
+    public ResponseEntity<CharacterResponse> removeCondition(
+        @PathVariable String id,
+        @PathVariable String conditionId
+    ) {
+        return characterCommandService.removeCondition(id, conditionId)
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());

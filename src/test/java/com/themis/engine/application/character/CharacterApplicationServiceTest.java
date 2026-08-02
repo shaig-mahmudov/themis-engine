@@ -47,6 +47,37 @@ class CharacterApplicationServiceTest {
     }
 
     @Test
+    void removeConditionCallsRemoveConditionByIdAndSaves() {
+        CharacterStore characterStore = mock(CharacterStore.class);
+        Character character = mock(Character.class);
+        when(characterStore.findById("character-1")).thenReturn(Optional.of(character));
+        when(characterStore.save(character)).thenReturn(character);
+
+        Optional<Character> result = new CharacterCommandService(characterStore).removeCondition("character-1", "cond-1");
+
+        assertThat(result).containsSame(character);
+        verify(character).removeConditionById("cond-1");
+        verify(characterStore).save(character);
+    }
+
+    @Test
+    void removeConditionRejectsBlankConditionId() {
+        assertThatThrownBy(() -> new CharacterCommandService(mock(CharacterStore.class)).removeCondition("char-1", " "))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void removeConditionReturnsEmptyAndDoesNotSaveWhenCharacterIsMissing() {
+        CharacterStore characterStore = mock(CharacterStore.class);
+        when(characterStore.findById("missing")).thenReturn(Optional.empty());
+
+        Optional<Character> result = new CharacterCommandService(characterStore).removeCondition("missing", "cond-1");
+
+        assertThat(result).isEmpty();
+        verify(characterStore, never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
     void queryServiceReturnsEmptyWhenCharacterIsMissing() {
         CharacterStore characterStore = mock(CharacterStore.class);
         when(characterStore.findById("missing")).thenReturn(Optional.empty());

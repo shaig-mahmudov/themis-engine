@@ -372,6 +372,19 @@ public class Character implements java.io.Serializable {
         applyModifiers(condition.modifiers());
     }
 
+    public void removeConditionById(String conditionId) {
+        if (conditionId == null || conditionId.isBlank()) {
+            throw new IllegalArgumentException("Cannot remove null or blank condition ID");
+        }
+        Condition stored = activeConditions.stream()
+            .filter(c -> c.id().equals(conditionId))
+            .findFirst()
+            .orElse(null);
+        if (stored != null) {
+            removeCondition(stored);
+        }
+    }
+
     public void removeCondition(Condition condition) {
         if (condition == null) {
             throw new IllegalArgumentException("Cannot remove null condition");

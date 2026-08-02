@@ -77,6 +77,16 @@ public class CharacterCommandService {
         });
     }
 
+    public Optional<Character> removeCondition(String characterId, String conditionId) {
+        if (conditionId == null || conditionId.isBlank()) {
+            throw new IllegalArgumentException("conditionId cannot be null or blank");
+        }
+        return characterStore.findById(characterId).map(c -> {
+            c.removeConditionById(conditionId);
+            return characterStore.save(c);
+        });
+    }
+
     public Optional<Character> applyCondition(String id, Condition condition) {
         if (condition == null) {
             throw new IllegalArgumentException("Condition cannot be null");

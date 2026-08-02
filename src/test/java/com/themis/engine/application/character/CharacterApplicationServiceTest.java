@@ -77,6 +77,7 @@ class CharacterApplicationServiceTest {
         verify(characterStore, never()).save(org.mockito.ArgumentMatchers.any());
     }
 
+    @Test
     void queryServiceReturnsEmptyWhenCharacterIsMissing() {
         CharacterStore characterStore = mock(CharacterStore.class);
         when(characterStore.findById("missing")).thenReturn(Optional.empty());

@@ -15,7 +15,7 @@ The infrastructure prioritizes high performance, strict domain isolation, and ma
 | Component | Technology | Rationale |
 | :--- | :--- | :--- |
 | **Language** | Java 21 LTS | Leverages mature pattern matching, records, and sealed interfaces to parse complex rules and conditions efficiently. |
-| **Framework** | Spring Boot 3.x | Delivers robust dependency injection, REST/WebSocket capabilities, and aligns perfectly with modern Java enterprise standards. |
+| **Framework** | Spring Boot 3.x | Delivers robust dependency injection, REST capabilities, and aligns perfectly with modern Java enterprise standards. |
 | **Database** | PostgreSQL | Handles the highly relational data architecture required for game entities (classes, features, prerequisites, spells). |
 | **Caching** | Redis | Mitigates the computational expense of dynamic stat generation by caching calculated character states. |
 | **Testing** | JUnit 5 & Mockito | Essential for the rigorous Test-Driven Development (TDD) required to validate stacking rules and domain logic. |
@@ -31,13 +31,10 @@ The system utilizes a **Hexagonal Architecture** (Ports and Adapters) to complet
 ### Value Objects (Immutable)
 * **DiceRoll:** Represents a static roll formula (e.g., `1d8+4`).
 * **Modifier:** Represents a numerical bonus and its categorical type (e.g., `+2 Enhancement`).
-* **StatValue:** Represents a discrete statistic measurement.
-* **Distance:** Represents spatial measurements on a grid.
 
 ### Entities (Mutable with Identity)
 * **Spell:** Represents a castable magical effect and its parameters.
 * **Weapon:** Represents an equippable combat item with specific damage and critical properties.
-* **Feat:** Represents a specific character ability, passive trait, or combat maneuver.
 * **Condition:** Represents an active status effect altering state (e.g., *Shaken*, *Grappled*).
 
 ### Aggregate Roots
@@ -67,6 +64,6 @@ The system utilizes a **Hexagonal Architecture** (Ports and Adapters) to complet
 * Design and deploy the PostgreSQL schema to persist raw, relational game data and feature lists.
 
 ### Phase 4: API, Caching, and Automation
-* Expose domain operations through Spring Boot REST controllers and WebSocket endpoints for real-time synchronization.
+* Expose domain operations through Spring Boot REST controllers.
 * Integrate Redis caching to store fully calculated character sheets, implementing precise cache invalidation triggers for active state changes.
 * Finalize GitHub Actions pipelines to execute the complete TDD validation suite continuously during deployment.

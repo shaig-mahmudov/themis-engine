@@ -8,7 +8,7 @@
 
 Themis Engine is a Java 21 and Spring Boot 3.5 backend that models a focused subset of Pathfinder First Edition rules. Its strongest asset is a tested domain model for modifier stacking, character-derived statistics, action economy, spell slots, attacks, and initiative-based encounters. The application exposes those rules through a secured REST API and persists character and encounter aggregates in PostgreSQL, with Redis used as a read/write-through Spring cache.
 
-The project is a functional service rather than only an architectural prototype. A fresh test run completed successfully with **67 tests run, 0 failures, 0 errors, and 1 skipped test**. Seven Flyway migrations were validated and applied against the H2 compatibility database during that run.
+The project is a functional service rather than only an architectural prototype. A fresh test run completed successfully with **134 tests run, 0 failures, 0 errors, and 1 skipped test**. Seven Flyway migrations were validated and applied against the H2 compatibility database during that run.
 
 The current architecture is best described as **hexagonal-inspired** rather than strictly hexagonal: domain entities are free of persistence and web concerns, and repository ports isolate JPA, but application services and the rule engine live in the domain package and depend on Spring annotations. The codebase is coherent and small enough to evolve safely, but production readiness is limited by default credentials, concurrency controls, rate-limit design, PostgreSQL-specific verification, and incomplete observability/API documentation.
 
@@ -33,7 +33,7 @@ Repository snapshot metrics:
 | REST endpoint methods | 22 |
 | Flyway migrations | 7 (6 SQL, 1 Java) |
 | Standalone ADRs | 3 |
-| Fresh test result | 67 run, 0 failed, 0 errors, 1 skipped |
+| Fresh test result | 134 run, 0 failed, 0 errors, 1 skipped |
 
 ## Product purpose and implemented capabilities
 
@@ -217,7 +217,7 @@ mvn -B test
 Result on 2026-07-18:
 
 ```text
-Tests run: 67, Failures: 0, Errors: 0, Skipped: 1
+Tests run: 134, Failures: 0, Errors: 0, Skipped: 1
 BUILD SUCCESS
 ```
 
@@ -281,10 +281,10 @@ The README is valuable as the original architectural direction, while `Walkthrou
 Key differences from the current code:
 
 - the README describes WebSocket support and a wider Pathfinder content model that have not been implemented;
-- its example value objects include `StatValue` and `Distance`, and entities include `Feat`, none of which exist in the current source;
-- Redis caches repository results but is not an independent calculated-character or encounter store;
+- its example value objects and entities were outdated;
+- Redis caches fully computed Character domain aggregate root rather than raw database entities;
 - Prometheus is configured for exposure but lacks the registry dependency;
-- the walkthrough's earlier test total is stale; the fresh result is 67 tests run with 1 skipped;
+- the walkthrough's earlier test total is stale; the fresh result is 134 tests run with 1 skipped;
 - ADR links previously pointed to a root `DECISIONS.md`; the decision records now live under `docs/ADR/`.
 
 For ongoing maintenance, use this report for the current-state overview, `Walkthrough.md` for history, and [the ADR index](ADR/DECISIONS.md) for durable decisions.

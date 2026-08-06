@@ -15,7 +15,12 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import jakarta.persistence.OptimisticLockException;
 
 import java.util.Objects;
+import org.springframework.retry.RetryContext;
+import org.springframework.retry.support.RetrySynchronizationManager;
+
 import java.util.random.RandomGenerator;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Service that orchestrates state-changing combat use cases.
@@ -47,8 +52,61 @@ public class CombatCommandService {
         this.random = random;
     }
 
+    private static class ReplayingRandom implements RandomGenerator {
+        private final RandomGenerator delegate;
+        private final List<Integer> recorded = new ArrayList<>();
+        private int index = 0;
+        private final boolean replaying;
+
+        public ReplayingRandom(RandomGenerator delegate, boolean replaying) {
+            this.delegate = delegate;
+            this.replaying = replaying;
+        }
+
+        @Override
+        public long nextLong() {
+            return delegate.nextLong();
+        }
+
+        @Override
+        public int nextInt(int origin, int bound) {
+            if (replaying && index < recorded.size()) {
+                return recorded.get(index++);
+            }
+            int val = delegate.nextInt(origin, bound);
+            if (!replaying) {
+                recorded.add(val);
+            }
+            return val;
+        }
+
+        public List<Integer> getRecorded() {
+            return recorded;
+        }
+
+        public void setRecorded(List<Integer> previous) {
+            this.recorded.addAll(previous);
+        }
+    }
+
     public AttackResult resolveAttack(ResolveAttackCommand command) {
         Objects.requireNonNull(command, "Resolve attack command cannot be null");
+
+        RandomGenerator activeRandom = this.random;
+        RetryContext context = RetrySynchronizationManager.getContext();
+
+        if (context != null) {
+            List<Integer> previousRolls = (List<Integer>) context.getAttribute("combat.random.rolls");
+            if (previousRolls != null) {
+                ReplayingRandom replayer = new ReplayingRandom(this.random, true);
+                replayer.setRecorded(previousRolls);
+                activeRandom = replayer;
+            } else {
+                ReplayingRandom recorder = new ReplayingRandom(this.random, false);
+                context.setAttribute("combat.random.rolls", recorder.getRecorded());
+                activeRandom = recorder;
+            }
+        }
 
         String attackerId = command.attackerId();
         String targetId = command.targetId();
@@ -80,8 +138,8 @@ public class CombatCommandService {
         }
         attacker.getTurnState().consume(ActionType.STANDARD);
 
-        int roll = d20Roll != null ? d20Roll : random.nextInt(1, 21);
-        AttackResult result = ruleEngine.resolveAttack(attacker, weapon, target, roll, random);
+        int roll = d20Roll != null ? d20Roll : activeRandom.nextInt(1, 21);
+        AttackResult result = ruleEngine.resolveAttack(attacker, weapon, target, roll, activeRandom);
 
         characterStore.save(attacker);
         characterStore.save(target);

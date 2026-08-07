@@ -35,7 +35,7 @@ The project should remain a **modular monolith**. Microservices are not recommen
 
 ---
 
-## Phase 1: State Consistency and Production Safety (Completed)
+## Phase 1: State Consistency and Production Safety (Partially Completed)
 
 ### Goal
 
@@ -46,7 +46,7 @@ Eliminate the highest-risk data consistency and deployment problems before chang
 - Add JPA `@Version` columns to character and encounter persistence entities. ✅
 - Add corresponding Flyway migrations and propagate aggregate versions through repository mappings. ✅
 - Translate optimistic-lock failures into HTTP `409 Conflict` responses. ✅
-- Consider exposing versions as response fields or ETags so clients can perform conditional mutations. ✅ (versions exposed in EncounterResponse; ETag header exposed via CORS config)
+- Consider exposing versions as response fields or ETags so clients can perform conditional mutations. ⚠️ (versions exposed in EncounterResponse; CORS allows ETag/If-Match headers but controllers do not yet emit ETag headers or enforce If-Match for conditional requests)
 - Set `spring.jpa.open-in-view=false` and ensure all required aggregate data is loaded inside transactions. ❌ (open-in-view still at defaults)
 - Make production API keys and database credentials mandatory instead of relying on known defaults. ⚠️ partial (CORS allowlist is now mandatory; secrets still have fallback defaults, but docker-compose.override.yml + .env.example enforce explicit environment variables)
 - Restrict CORS through environment-specific origin allowlists. ✅
@@ -60,7 +60,7 @@ Eliminate the highest-risk data consistency and deployment problems before chang
 - Verify that every state-changing use case has one clear transaction boundary. ✅ (application services carry `@Transactional`)
 - Define conflict behavior for simultaneous attacks, turn advancement, slot consumption, and condition expiration. ⚠️ (optimistic locking handles general conflicts via `409`; specific conflict semantics are not separately documented)
 - Validate duplicate participant, equipment, condition, and client-supplied character-ID behavior. ❌ (not explicitly defined)
-- Document whether retries are safe for every mutating endpoint. ❌ (not documented)
+- Document whether retries are safe for every mutating endpoint. ⚠️ (CharacterCommandService and CombatCommandService implement optimistic-lock retry with up to 3 attempts, 50-100ms exponential backoff (multiplier 2.0), and replay of combat random rolls; retry applies only to optimistic-lock exceptions; endpoint-level idempotency and retry safety remain undocumented)
 
 ### Testing work
 
@@ -87,7 +87,7 @@ Eliminate the highest-risk data consistency and deployment problems before chang
 
 ---
 
-## Phase 2: Enforce Application and Domain Boundaries (Completed)
+## Phase 2: Enforce Application and Domain Boundaries (Partially Completed)
 
 ### Goal
 
@@ -517,14 +517,17 @@ Every phase should satisfy these gates before it is considered complete:
 
 ## Recommended first implementation backlog
 
-The first practical batch was delivered across Phases 9 and 10 of the implementation walkthrough, which map to Roadmap Phase 1 and Phase 2 respectively. Remaining items from those phases:
+The first practical batch was delivered across Phases 9 and 10 of the implementation walkthrough, which map to Roadmap Phase 1 and Phase 2 respectively.
 
-1. Disable `spring.jpa.open-in-view` and resolve any loading issues.
-2. Make API key and database credentials mandatory at startup with a hard failure if missing.
-3. Document retry safety and conflict semantics for every mutating endpoint.
-4. Add migration tests for existing character and encounter data.
-5. Resolve the Windows Maven wrapper bootstrap path issue.
-6. Define duplicate participant, equipment, condition, and client-supplied character-ID behavior.
+Phase 9 introduced optimistic-lock retry for CharacterCommandService and CombatCommandService with up to 3 attempts, 50-100ms exponential backoff (multiplier 2.0), retrying on optimistic-lock exceptions (OptimisticLockingFailureException, ObjectOptimisticLockingFailureException, OptimisticLockException). CombatCommandService replays random combat rolls across retries to preserve deterministic outcomes; final conflicts return HTTP 409. Endpoint-level idempotency requirements remain undocumented.
+
+Remaining items from those phases:
+
+1. Make API key and database credentials mandatory at startup with a hard failure if missing (API key is validated as non-blank at filter initialization; database password has no fallback in production application.yaml but test/docker-compose defaults remain).
+2. Document retry safety and conflict semantics for every mutating endpoint (optimistic-lock retry exists for application services but endpoint-level idempotency contracts are undocumented).
+3. Add migration tests for existing character and encounter data.
+4. Resolve the Windows Maven wrapper bootstrap path issue.
+5. Define duplicate participant, equipment, condition, and client-supplied character-ID behavior.
 
 ## Related documentation
 

@@ -203,7 +203,7 @@ Implemented safeguards include stateless security, API-key validation for `/api/
 
 The following must be addressed before an internet-facing production deployment:
 
-1. Enforce non-default API keys and database passwords at startup. Phase 9 made CORS and CORS-origin misconfiguration fatal at startup and removed in-image secret defaults, but the deployer still needs to supply strong production secrets through the environment.
+1. Enforce non-default API keys and database passwords at startup. Phase 9 made CORS and CORS-origin misconfiguration fatal at startup and removed in-image secret defaults. The API key is validated as non-blank at filter initialization, and production application.yaml requires both `THEMIS_API_KEY` and `SPRING_DATASOURCE_PASSWORD` without fallbacks, though test and docker-compose configurations retain development defaults for convenience.
 2. Tighten actuator exposure beyond `/actuator/health` if additional endpoints are enabled in the future. Phase 9 already restricts public access to `/actuator/health` and `/error`, with all other actuator routes requiring the API key.
 3. Use a reverse proxy or trusted-proxy header policy. Phase 9 made `X-Forwarded-For` opt-in (`themis.rate-limit.trust-forwarded-headers=false` by default) and bounded the in-memory rate-limit map, but distributed Redis-backed buckets are still recommended for multi-instance deployments.
 4. Avoid returning raw exception messages from unexpected failures. Phase 9 introduced a generic handler that returns a stable public message with a server-side correlation ID for `500` responses.

@@ -4,6 +4,74 @@ This document tracks completed implementation phases for **Themis Engine**.
 
 ---
 
+## Phase 10: Application Layer Boundaries and Command Encapsulation (Completed)
+
+We introduced an explicit application layer that isolates use-case orchestration from both the API and the domain core, eliminating direct store access from controllers and promoting use-case parameters into strongly typed command records.
+
+### 1. Command/Query Service Split
+* Split each bounded context's orchestration into separate `*CommandService` (state-changing, `@Transactional`) and `*QueryService` (read-only) classes where applicable under [com/themis/engine/application](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/application):
+  * [CharacterCommandService.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/application/character/CharacterCommandService.java) / [CharacterQueryService.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/application/character/CharacterQueryService.java)
+  * [CombatCommandService.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/application/combat/CombatCommandService.java) (read-only queries handled directly by CharacterQueryService)
+  * [EncounterCommandService.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/application/encounter/EncounterCommandService.java) / [EncounterQueryService.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/application/encounter/EncounterQueryService.java)
+* Removed the deprecated monolithic application services and rewired every controller to inject the new command/query services.
+
+### 2. Command Records for Use-Case Inputs
+* Introduced explicit command records under `application/{context}/command/`:
+  * [ConfigureSpellcastingCommand.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/application/character/command/ConfigureSpellcastingCommand.java)
+  * [ResolveAttackCommand.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/application/combat/command/ResolveAttackCommand.java)
+  * [AddParticipantCommand.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/application/encounter/command/AddParticipantCommand.java)
+  * [StartEncounterCommand.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/application/encounter/command/StartEncounterCommand.java)
+* Controllers now translate request DTOs into commands before invoking services (see `CharacterController.configureSpellcasting` for the pattern).
+
+### 3. API Mappers and Thin Controllers
+* Added [CharacterApiMapper.java](file:///c://Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/api/character/CharacterApiMapper.java), [CombatApiMapper.java](file:///c://Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/api/combat/CombatApiMapper.java), and [EncounterApiMapper.java](file:///c://Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/api/encounter/EncounterApiMapper.java) to translate between request/response DTOs and domain aggregates. Controllers now act as thin delegates with no domain-construction logic.
+* Reorganized the API package into feature-oriented subpackages (`api/character`, `api/combat`, `api/encounter`, `api/common`).
+* Removed the direct `EncounterStore` dependency from `EncounterController`; encounter reads now flow through `EncounterQueryService.getEncounter`.
+* Renamed `AttackRequest` to `ResolveAttackRequest`, introduced `AttackResponse`, and rewired the combat controller through `CombatApiMapper`.
+
+### 4. Domain Layer Purity
+* Decapsulated Spring annotations from [RuleEngine.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/domain/RuleEngine.java) and registered it as an infrastructure bean via a new [DomainConfiguration.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/infrastructure/config/DomainConfiguration.java). The rules core retains no Spring annotations.
+* Added [HandlerMethodValidationException](file:///c://Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/api/common/error/GlobalExceptionHandler.java) handling to `GlobalExceptionHandler` so method-parameter validation failures produce structured `400` responses instead of generic `500`s.
+
+### 5. Architecture Guardrails
+* Added [ArchUnit](https://www.archunit.org/) dependency and the [ArchitectureTest.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/test/java/com/themis/engine/architecture/ArchitectureTest.java) suite. The rules forbid the API and domain packages from importing infrastructure classes and enforce that application command records satisfy value-style invariants.
+* Added dedicated unit tests for the character, combat, and encounter application services, mapping behavior, and controller validation/null-safety.
+
+---
+
+## Phase 9: Armor, Optimistic Locking, and Concurrency Safety (Completed)
+
+We added armor equip/unequip support with Pathfinder 1e Dexterity-cap rules, introduced optimistic locking for both aggregates, and hardened the security configuration so production deployments cannot start with known fallbacks.
+
+### 1. Armor Domain and Persistence
+* Created [Armor.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/domain/Armor.java): An immutable record representing equipped armor or shields. Tracks equipment modifiers per stat plus an optional `maxDexterityBonus`. Constructor deep-copies the modifier map and enforces non-null/non-blank `id` and `name`, and non-negative Dexterity cap.
+* Updated [Character.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/domain/Character.java) with `equipArmor`/`unequipArmorById` and the armor-aware AC calculation. The aggregate now applies the lowest non-null armor `maxDexterityBonus` as a cap on the Dexterity bonus to AC, following [ADR-002](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/docs/ADR/ADR-002-armor-class-max-dexterity-bonus-capping.md).
+* Created Flyway migration [V7__add_armor.sql](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/resources/db/migration/V7__add_armor.sql) adding the `character_equipped_armors` table. Added the matching [CharacterEquippedArmorEntity.java](file:///c://Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/infrastructure/CharacterEquippedArmorEntity.java) and [CharacterEquippedArmorId.java](file:///c://Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/infrastructure/CharacterEquippedArmorId.java) composite key, and extended [CharacterEntity.java](file:///c://Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/infrastructure/CharacterEntity.java) and [PostgresCharacterRepositoryAdapter.java](file:///c://Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/infrastructure/PostgresCharacterRepositoryAdapter.java) to persist/restore armor as a `LinkedHashSet`.
+* Added [EquipArmorRequest.java](file:///c://Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/api/character/request/EquipArmorRequest.java) and exposed `POST /api/characters/{id}/equip-armor` and `POST /api/characters/{id}/unequip-armor?armorId=…` on [CharacterController.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/api/character/CharacterController.java).
+
+### 2. Optimistic Locking for Concurrent Writes
+* Created Flyway migration [V8__add_optimistic_lock_versions.sql](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/resources/db/migration/V8__add_optimistic_lock_versions.sql) adding a `version BIGINT NOT NULL DEFAULT 0` column to both `characters` and `encounters`.
+* Added JPA `@Version` fields on [CharacterEntity.java](file:///c://Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/infrastructure/CharacterEntity.java) and [EncounterEntity.java](file:///c//Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/infrastructure/EncounterEntity.java), and propagated version values through both repository adapter mappings so concurrent read-modify-write requests can no longer silently overwrite each other.
+* Surfaced optimistic-lock failures as structured `409 Conflict` responses via a new handler in [GlobalExceptionHandler.java](file:///c://Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/api/common/error/GlobalExceptionHandler.java) covering both `ObjectOptimisticLockingFailureException` and `jakarta.persistence.OptimisticLockException`.
+* Exposed the aggregate version in [EncounterResponse.java](file:///c//Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/api/encounter/response/EncounterResponse.java) so clients can track version state.
+* Added automatic optimistic-lock retry to CharacterCommandService and CombatCommandService with up to 3 attempts, 50-100ms exponential backoff (multiplier 2.0), retrying on OptimisticLockingFailureException, ObjectOptimisticLockingFailureException, and OptimisticLockException. CombatCommandService replays random combat rolls across retries to preserve deterministic attack outcomes. Final conflicts return HTTP 409.
+* Added [OptimisticLockingIntegrationTest.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/test/java/com/themis/engine/infrastructure/OptimisticLockingIntegrationTest.java) to assert that stale updates fail rather than overwrite newer state, and verified retry behavior preserves combat-roll determinism under concurrent writes.
+
+### 3. Production-Safe Configuration and CI
+* Tightened [SecurityConfiguration.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/infrastructure/security/SecurityConfiguration.java):
+  * CORS now refuses to start with a wildcard or blank `THEMIS_CORS_ALLOWED_ORIGINS` allowlist. CORS configuration permits `If-Match` request header and exposes `ETag` response header, enabling future conditional-request workflows (controllers do not yet emit ETag headers or enforce If-Match). Credentials remain disabled.
+  * Actuator is split so only `/actuator/health` and `/error` are public; all other routes require the API key.
+  * `RateLimitFilter` accepts an explicit `themis.rate-limit.trust-forwarded-headers` flag (default `false`) and a bounded `max-clients` LRU map to prevent unbounded growth when `X-Forwarded-For` is honored.
+  * API key validation enforces non-blank `THEMIS_API_KEY` at filter initialization; application.yaml requires `THEMIS_API_KEY` and `SPRING_DATASOURCE_PASSWORD` without fallbacks, though test and docker-compose configurations supply development defaults.
+* Added `.env.example`, `docker-compose.override.yml`, and environment-variable placeholders so production deployments require explicit secrets instead of falling back to development defaults.
+* Configured the GitHub Actions build workflow [build.yml](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/.github/workflows/build.yml) with PostgreSQL and Redis service containers so the CI pipeline validates Flyway migrations and adapter behavior against a real PostgreSQL instance rather than only H2.
+* Isolated the Redis health check from the test cache configuration to prevent skipped-context failures during local `mvn test`.
+
+### 4. Active Condition Removal by ID
+* Added `removeConditionById(conditionId)` to [Character.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/domain/Character.java) and plumbed it through `CharacterCommandService.removeCondition` and a new `DELETE /api/characters/{id}/conditions/{conditionId}` endpoint on [CharacterController.java](file:///c:/Users/Guven%20Servis/Desktop/themis-engine/src/main/java/com/themis/engine/api/character/CharacterController.java), closing the previously-asymmetric "apply but cannot remove by ID" gap.
+
+---
+
 ## Phase 8: Encounter Management (Completed)
 
 We have successfully implemented turn-based combat Grouping/Encounter management. The tracker organizes characters, rolls initiative dynamically (with server and client inputs), handles rounds and turn sequencing, and resets participant action economy on turn-start.
@@ -204,8 +272,11 @@ Enforces stacking rules for modifiers in Pathfinder 1e.
 
 ## Global Verification Results
 
-We executed the full test suite using `mvn test`:
+We executed the full test suite using `mvn test` on 2026-08-03 (Java 21, Spring Boot 3.5.15):
 * **Total Tests Run:** 134
 * **Failures / Errors:** 0
-* **Skipped (Spring Testcontainers Integration Test):** 1 (requires Docker environment)
-* **All 133 unit and integration tests passed successfully!**
+* **Skipped:** 1 (`ThemisEngineApplicationTests` — guarded by Testcontainers and requires Docker)
+* **Architecture (ArchUnit) tests:** 27 enforcing layer boundaries and command-record invariants
+* **All 133 active unit and integration tests passed successfully; BUILD SUCCESS.**
+
+Test coverage spans the domain rules, application command/query services, REST controllers, API mappers, security and rate-limit filters, optimistic locking, JPA repository adapters, and the ArchUnit guardrail suite.

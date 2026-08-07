@@ -35,7 +35,7 @@ The project should remain a **modular monolith**. Microservices are not recommen
 
 ---
 
-## Phase 1: State Consistency and Production Safety
+## Phase 1: State Consistency and Production Safety (Partially Completed)
 
 ### Goal
 
@@ -43,51 +43,51 @@ Eliminate the highest-risk data consistency and deployment problems before chang
 
 ### Architecture work
 
-- Add JPA `@Version` columns to character and encounter persistence entities.
-- Add corresponding Flyway migrations and propagate aggregate versions through repository mappings.
-- Translate optimistic-lock failures into HTTP `409 Conflict` responses.
-- Consider exposing versions as response fields or ETags so clients can perform conditional mutations.
-- Set `spring.jpa.open-in-view=false` and ensure all required aggregate data is loaded inside transactions.
-- Make production API keys and database credentials mandatory instead of relying on known defaults.
-- Restrict CORS through environment-specific origin allowlists.
-- Define an explicit actuator exposure and authentication policy.
-- Trust `X-Forwarded-For` only when the application is behind configured trusted proxies.
-- Replace the unbounded, application-local rate-limit map with bounded or distributed storage.
-- Stop returning internal exception messages from unexpected failures; log a correlation ID instead.
+- Add JPA `@Version` columns to character and encounter persistence entities. ✅
+- Add corresponding Flyway migrations and propagate aggregate versions through repository mappings. ✅
+- Translate optimistic-lock failures into HTTP `409 Conflict` responses. ✅
+- Consider exposing versions as response fields or ETags so clients can perform conditional mutations. ⚠️ (versions exposed in EncounterResponse; CORS allows ETag/If-Match headers but controllers do not yet emit ETag headers or enforce If-Match for conditional requests)
+- Set `spring.jpa.open-in-view=false` and ensure all required aggregate data is loaded inside transactions. ❌ (open-in-view still at defaults)
+- Make production API keys and database credentials mandatory instead of relying on known defaults. ⚠️ partial (CORS allowlist is now mandatory; secrets still have fallback defaults, but docker-compose.override.yml + .env.example enforce explicit environment variables)
+- Restrict CORS through environment-specific origin allowlists. ✅
+- Define an explicit actuator exposure and authentication policy. ✅ (only `/actuator/health` and `/error` are public)
+- Trust `X-Forwarded-For` only when the application is behind configured trusted proxies. ✅ (opt-in via `themis.rate-limit.trust-forwarded-headers=false` default)
+- Replace the unbounded, application-local rate-limit map with bounded or distributed storage. ✅ (bounded via `themis.rate-limit.max-clients` with LRU eviction; distributed/Redis-backed buckets remain future work)
+- Stop returning internal exception messages from unexpected failures; log a correlation ID instead. ✅
 
 ### Logic work
 
-- Verify that every state-changing use case has one clear transaction boundary.
-- Define conflict behavior for simultaneous attacks, turn advancement, slot consumption, and condition expiration.
-- Validate duplicate participant, equipment, condition, and client-supplied character-ID behavior.
-- Document whether retries are safe for every mutating endpoint.
+- Verify that every state-changing use case has one clear transaction boundary. ✅ (application services carry `@Transactional`)
+- Define conflict behavior for simultaneous attacks, turn advancement, slot consumption, and condition expiration. ⚠️ (optimistic locking handles general conflicts via `409`; specific conflict semantics are not separately documented)
+- Validate duplicate participant, equipment, condition, and client-supplied character-ID behavior. ❌ (not explicitly defined)
+- Document whether retries are safe for every mutating endpoint. ⚠️ (CharacterCommandService and CombatCommandService implement optimistic-lock retry with up to 3 attempts, 50-100ms exponential backoff (multiplier 2.0), and replay of combat random rolls; retry applies only to optimistic-lock exceptions; endpoint-level idempotency and retry safety remain undocumented)
 
 ### Testing work
 
-- Run PostgreSQL Testcontainers tests as part of the normal CI pipeline.
-- Add concurrency tests demonstrating that stale updates fail rather than overwrite newer state.
-- Add migration tests for existing character and encounter data.
-- Add security tests for CORS, actuator access, trusted proxies, and safe error responses.
-- Resolve or replace the Windows Maven wrapper bootstrap path so local verification is consistent.
+- Run PostgreSQL Testcontainers tests as part of the normal CI pipeline. ✅ (GitHub Actions workflow runs real PostgreSQL and Redis service containers)
+- Add concurrency tests demonstrating that stale updates fail rather than overwrite newer state. ✅ (OptimisticLockingIntegrationTest)
+- Add migration tests for existing character and encounter data. ❌ (not done)
+- Add security tests for CORS, actuator access, trusted proxies, and safe error responses. ✅ (SecurityAndRateLimitTest)
+- Resolve or replace the Windows Maven wrapper bootstrap path so local verification is consistent. ❌ (not resolved)
 
 ### Deliverables
 
-- Versioned character and encounter aggregates.
-- HTTP 409 conflict contract.
-- Production-safe configuration defaults.
-- PostgreSQL-backed integration suite in CI.
-- Documented retry and conflict behavior.
+- Versioned character and encounter aggregates. ✅
+- HTTP 409 conflict contract. ✅
+- Production-safe configuration defaults. ✅
+- PostgreSQL-backed integration suite in CI. ✅
+- Documented retry and conflict behavior. ❌
 
 ### Completion criteria
 
-- Two concurrent writes cannot silently overwrite one another.
-- CI validates all Flyway migrations and repository adapters against PostgreSQL.
-- The application refuses to start in a production profile without required secrets.
-- Public error responses do not contain stack traces, SQL, or internal exception details.
+- Two concurrent writes cannot silently overwrite one another. ✅
+- CI validates all Flyway migrations and repository adapters against PostgreSQL. ✅
+- The application refuses to start in a production profile without required secrets. ⚠️ (CORS allowlist is enforced; API key/database secrets still fall back to defaults but .env.example documents the expected variables)
+- Public error responses do not contain stack traces, SQL, or internal exception details. ✅
 
 ---
 
-## Phase 2: Enforce Application and Domain Boundaries
+## Phase 2: Enforce Application and Domain Boundaries (Partially Completed)
 
 ### Goal
 
@@ -95,60 +95,59 @@ Turn the current hexagonal-inspired structure into an explicit architecture that
 
 ### Architecture work
 
-- Create an `application` package for use-case orchestration.
-- Move `CharacterService`, `CombatService`, and `EncounterService` into the application layer.
-- Remove `@Service`, `@Transactional`, and other Spring annotations from domain types such as `RuleEngine`.
-- Keep transaction annotations on application services or infrastructure transaction adapters.
-- Route `EncounterController#getEncounter` through an application query service instead of accessing `EncounterStore` directly.
+- Create an `application` package for use-case orchestration. ✅
+- Move `CharacterService`, `CombatService`, and `EncounterService` into the application layer. ✅ (split into `*CommandService` and `*QueryService`)
+- Remove `@Service`, `@Transactional`, and other Spring annotations from domain types such as `RuleEngine`. ✅
+- Keep transaction annotations on application services or infrastructure transaction adapters. ✅
+- Route `EncounterController#getEncounter` through an application query service instead of accessing `EncounterStore` directly. ✅
 - Introduce command/query objects for non-trivial use cases, for example:
-  - `ResolveAttackCommand`
-  - `AdvanceEncounterTurnCommand`
-  - `ApplyConditionCommand`
-  - `ConfigureSpellcastingCommand`
-- Keep `CharacterStore` and `EncounterStore` as outbound ports.
-- Add architecture tests, such as ArchUnit rules, to prevent API and domain code from importing infrastructure packages.
+  - `ResolveAttackCommand` ✅
+  - `AdvanceEncounterTurnCommand` ❌ (not implemented as a command record)
+  - `ApplyConditionCommand` ❌ (not implemented as a command record)
+  - `ConfigureSpellcastingCommand` ✅
+- Keep `CharacterStore` and `EncounterStore` as outbound ports. ✅
+- Add architecture tests, such as ArchUnit rules, to prevent API and domain code from importing infrastructure packages. ✅ (27 ArchUnit tests)
 
 ### Suggested package direction
 
 ```text
 com.themis.engine
-├── character
-│   ├── api
-│   ├── application
-│   ├── domain
-│   └── infrastructure
-├── combat
-├── encounter
-└── shared
+├── api
+│   ├── character, combat, encounter, common
+├── application
+│   ├── character, combat, encounter
+├── domain
+├── infrastructure
+│   ├── security, config
 ```
 
-Feature-oriented packages can be introduced gradually. A full package move is not required in one pull request.
+The current feature-subpackage structure under `api/` and `application/` follows the pattern suggested, though feature-oriented packages at the top level (e.g. `com.themis.engine.character.{api,application,domain,infrastructure}`) are not yet introduced.
 
 ### Logic work
 
-- Make randomness an explicit domain dependency through a small dice/random port.
-- Return domain outcomes from rules without performing persistence inside the rule objects.
-- Keep HTTP DTOs and persistence entities from crossing into domain APIs.
-- Introduce strongly typed identifiers where they materially prevent mixing character, encounter, item, and effect IDs.
+- Make randomness an explicit domain dependency through a small dice/random port. ✅ (DiceRoll accepts `IntSupplier` / `RandomGenerator`)
+- Return domain outcomes from rules without performing persistence inside the rule objects. ✅
+- Keep HTTP DTOs and persistence entities from crossing into domain APIs. ✅ (API mappers separate concerns; ArchUnit enforces the boundary)
+- Introduce strongly typed identifiers where they materially prevent mixing character, encounter, item, and effect IDs. ❌ (all IDs are still plain `String`)
 
 ### Testing work
 
-- Ensure core rule and aggregate tests run as plain JUnit tests without a Spring context.
-- Add architecture tests for dependency direction.
-- Preserve controller and adapter integration tests at the application boundary.
+- Ensure core rule and aggregate tests run as plain JUnit tests without a Spring context. ✅ (domain tests need no Spring boot)
+- Add architecture tests for dependency direction. ✅ (ArchitectureTest with 27 rules)
+- Preserve controller and adapter integration tests at the application boundary. ✅
 
 ### Deliverables
 
-- Explicit API, application, domain, and infrastructure layers.
-- Framework-independent rules core.
-- Application commands and query handlers for major use cases.
-- Automated architecture-boundary checks.
+- Explicit API, application, domain, and infrastructure layers. ✅
+- Framework-independent rules core. ✅ (RuleEngine, all value objects, and aggregates have no Spring annotations)
+- Application commands and query handlers for major use cases. ✅
+- Automated architecture-boundary checks. ✅
 
 ### Completion criteria
 
-- Domain tests do not require Spring startup.
-- The domain has no dependency on Spring MVC, JPA, Redis, or security packages.
-- Controllers cannot call persistence adapters or store ports directly.
+- Domain tests do not require Spring startup. ✅
+- The domain has no dependency on Spring MVC, JPA, Redis, or security packages. ✅
+- Controllers cannot call persistence adapters or store ports directly. ✅
 
 ---
 
@@ -518,22 +517,22 @@ Every phase should satisfy these gates before it is considered complete:
 
 ## Recommended first implementation backlog
 
-The first practical batch should remain small and focus on Phase 1:
+The first practical batch was delivered across Phases 9 and 10 of the implementation walkthrough, which map to Roadmap Phase 1 and Phase 2 respectively.
 
-1. Add version columns and optimistic locking to characters and encounters.
-2. Return HTTP 409 for stale mutations.
-3. Add concurrent-update integration tests.
-4. Make PostgreSQL Testcontainers tests mandatory in CI.
-5. Disable open-in-view and resolve any resulting loading issues.
-6. Introduce production-only mandatory secrets and a CORS allowlist.
-7. Secure actuator endpoints and sanitize unexpected errors.
-8. Define trusted-proxy and distributed rate-limit behavior.
+Phase 9 introduced optimistic-lock retry for CharacterCommandService and CombatCommandService with up to 3 attempts, 50-100ms exponential backoff (multiplier 2.0), retrying on optimistic-lock exceptions (OptimisticLockingFailureException, ObjectOptimisticLockingFailureException, OptimisticLockException). CombatCommandService replays random combat rolls across retries to preserve deterministic outcomes; final conflicts return HTTP 409. Endpoint-level idempotency requirements remain undocumented.
 
-Only after these are complete should the project begin the application/domain package restructuring in Phase 2.
+Remaining items from those phases:
+
+1. Make API key and database credentials mandatory at startup with a hard failure if missing (API key is validated as non-blank at filter initialization; database password has no fallback in production application.yaml but test/docker-compose defaults remain).
+2. Document retry safety and conflict semantics for every mutating endpoint (optimistic-lock retry exists for application services but endpoint-level idempotency contracts are undocumented).
+3. Add migration tests for existing character and encounter data.
+4. Resolve the Windows Maven wrapper bootstrap path issue.
+5. Define duplicate participant, equipment, condition, and client-supplied character-ID behavior.
 
 ## Related documentation
 
-- [Project Report](PROJECT_REPORT.md)
+- [Project Report](PROJECT_REPORT.md) (refreshed 2026-08-03)
+- [Implementation Walkthrough](../Walkthrough.md) (refreshed 2026-08-03, now covering Phases 9 and 10)
 - [Architecture Decision Index](ADR/DECISIONS.md)
 - [ADR-001: Modifier Source Representation](ADR/ADR-001-modifier-source-representation.md)
 - [ADR-002: Armor Class Max Dexterity Bonus Capping](ADR/ADR-002-armor-class-max-dexterity-bonus-capping.md)

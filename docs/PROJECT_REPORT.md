@@ -1,16 +1,16 @@
 # Themis Engine Project Report
 
-**Assessment date:** 2026-07-18  
-**Repository version assessed:** `main` at `beaa57d`  
+**Assessment date:** 2026-08-03 (refreshed from the 2026-07-18 baseline)  
+**Repository version assessed:** `main` at `5336580`  
 **Application version:** `0.0.1-SNAPSHOT`
 
 ## Executive summary
 
-Themis Engine is a Java 21 and Spring Boot 3.5 backend that models a focused subset of Pathfinder First Edition rules. Its strongest asset is a tested domain model for modifier stacking, character-derived statistics, action economy, spell slots, attacks, and initiative-based encounters. The application exposes those rules through a secured REST API and persists character and encounter aggregates in PostgreSQL, with Redis used as a read/write-through Spring cache.
+Themis Engine is a Java 21 and Spring Boot 3.5.15 backend that models a focused subset of Pathfinder First Edition rules. Its strongest asset is a tested domain model for modifier stacking, character-derived statistics, action economy, spell slots, attacks, armor/Dexterity caps, and initiative-based encounters. The application exposes those rules through a secured REST API and persists character and encounter aggregates in PostgreSQL, with Redis used as a read/write-through Spring cache.
 
-The project is a functional service rather than only an architectural prototype. A fresh test run completed successfully with **134 tests run, 0 failures, 0 errors, and 1 skipped test**. Seven Flyway migrations were validated and applied against the H2 compatibility database during that run.
+The project is a functional service rather than only an architectural prototype. A fresh test run completed successfully with **134 tests run, 0 failures, 0 errors, and 1 skipped test**. Eight Flyway migrations were validated and applied against the H2 compatibility database during that run. The API surface now covers armor equip/unequip and removal of active conditions by ID, and both aggregates enforce optimistic locking through JPA `@Version` columns surfaced as `409 Conflict` responses.
 
-The current architecture is best described as **hexagonal-inspired** rather than strictly hexagonal: domain entities are free of persistence and web concerns, and repository ports isolate JPA, but application services and the rule engine live in the domain package and depend on Spring annotations. The codebase is coherent and small enough to evolve safely, but production readiness is limited by default credentials, concurrency controls, rate-limit design, PostgreSQL-specific verification, and incomplete observability/API documentation.
+The architecture is best described as **hexagonal-inspired** with an explicit application layer introduced in Phase 10: domain entities are free of persistence and web concerns, repository ports isolate JPA, application services handle use-case orchestration and transaction boundaries, and the API layer contains only controllers, DTOs, and mappers. ArchUnit rules (27 tests) enforce the layer boundaries on every build. Production readiness is improved since the previous assessment (mandatory CORS allowlist, bounded rate-limit map, public-health-only actuator policy, aggregate versioning), but gaps remain in OpenAPI documentation, WebSocket/real-time delivery, and broader Pathfinder content coverage.
 
 ## Assessment scope and method
 
@@ -19,20 +19,22 @@ This report is based on direct inspection of:
 - all main and test source files;
 - Maven, Spring, Docker, logging, CI, and test configuration;
 - REST controllers and DTOs;
+- application command/query services and command records;
 - domain aggregates, services, and rule objects;
 - JPA entities, adapters, caches, and Flyway migrations;
-- the README, implementation walkthrough, and architecture decisions;
+- the README, implementation walkthrough, architecture decisions, and roadmap;
 - a fresh Maven test execution on Java 21.
 
 Repository snapshot metrics:
 
 | Measure | Count |
 | --- | ---: |
-| Main Java source files | 70 |
-| Test Java source files | 15 |
+| Main Java source files | 81 |
+| Test Java source files | 23 |
 | REST endpoint methods | 22 |
-| Flyway migrations | 7 (6 SQL, 1 Java) |
+| Flyway migrations | 8 (7 SQL, 1 Java) |
 | Standalone ADRs | 3 |
+| ArchUnit guardrail tests | 27 |
 | Fresh test result | 134 run, 0 failed, 0 errors, 1 skipped |
 
 ## Product purpose and implemented capabilities
@@ -92,24 +94,26 @@ flowchart LR
     Adapters --> Cache["Spring Cache / Redis"]
     Adapters --> JPA["Spring Data JPA / Hibernate"]
     JPA --> PostgreSQL[(PostgreSQL)]
-    Flyway["Flyway V1–V7"] --> PostgreSQL
+    Flyway["Flyway V1–V8"] --> PostgreSQL
 ```
 
 ### Package responsibilities
 
 | Package | Responsibility | Assessment |
 | --- | --- | --- |
-| `com.themis.engine.domain` | Aggregates, value objects, rules, ports, and application services | Cohesive rules model; Spring service/transaction dependencies prevent a strictly framework-free domain core |
-| `com.themis.engine.api` | Controllers, request/response DTOs, validation, error mapping | Domain objects are generally protected from direct request deserialization; response contracts are explicit |
-| `com.themis.engine.infrastructure` | JPA entities/repositories, adapters, Redis configuration | Ports isolate persistence; mapping is explicit but sizeable and JSON modifier payloads require careful migration |
-| `com.themis.engine.infrastructure.security` | Authentication, authorization chain, and rate limiting | Simple and testable; suitable for controlled deployments, not a complete public API security model |
-| `db.migration` | Java-based Flyway data migration | Cleanly handles the structured modifier-source transition |
+| `com.themis.engine.domain` | Aggregates, value objects, rules, and outbound ports | Framework-free rules core since Phase 10; `RuleEngine` registers as a plain bean via `DomainConfiguration` and no longer carries Spring annotations |
+| `com.themis.engine.application` | Use-case orchestration, commands, queries, transaction boundaries | Split per bounded context (`character`, `combat`, `encounter`) into `*CommandService`/`*QueryService` with command records; ArchUnit rules forbid imports from infrastructure |
+| `com.themis.engine.api` | Controllers, request/response DTOs, validation, error mapping, API mappers | Controllers are thin delegates over application services; mappers isolate request/response DTOs from domain objects; organized into `character`, `combat`, `encounter`, `common` subpackages |
+| `com.themis.engine.infrastructure` | JPA entities/repositories, adapters, Redis configuration, optimistic-lock mapping | Ports isolate persistence; repository adapters map `@Version` columns between entities and aggregates and surface conflicts as `409` |
+| `com.themis.engine.infrastructure.security` | Authentication, authorization chain, and rate limiting | Mandatory CORS allowlist, `X-Forwarded-For` opt-in, bounded LRU rate-limit map, public-only `/actuator/health`; suitable for controlled deployments, not a complete public API security model |
+| `com.themis.engine.infrastructure.config` | Infrastructure bean wiring for framework-free domain services | Hosts `DomainConfiguration` that registers `RuleEngine` and similar domain services as Spring beans |
+| `db.migration` | Java-based Flyway data migration | Cleanly handles the structured modifier-source transition (V6). Note: the package sits outside `com.themis.engine` by Flyway convention |
 
 ### Domain boundaries
 
 `Character` is the primary aggregate for statistics, inventory-like effects, conditions, actions, spellcasting, and health. `Encounter` owns initiative order, round state, active participant position, and encounter lifecycle. `CombatService` coordinates two character aggregates in a transaction, while `EncounterService` coordinates an encounter with the active character at turn boundaries.
 
-The outbound ports, `CharacterStore` and `EncounterStore`, keep JPA types out of the aggregates. Controllers use request DTOs for creation and mutations and response DTOs for computed state. One exception to the use-case boundary is `EncounterController#getEncounter`, which reads `EncounterStore` directly rather than going through `EncounterService`.
+The outbound ports, `CharacterStore` and `EncounterStore`, keep JPA types out of the aggregates. Controllers use request DTOs for creation and mutations, command records for non-trivial use cases, and response DTOs for computed state. The previous exception where `EncounterController#getEncounter` read `EncounterStore` directly has been resolved: all reads now flow through `EncounterQueryService`.
 
 ## Core rule behavior
 
@@ -146,6 +150,7 @@ All `/api/**` routes require the `X-API-KEY` header. Actuator routes are public.
 | POST | `/api/characters/{id}/equip-armor` | Equip armor |
 | POST | `/api/characters/{id}/unequip-armor?armorId=…` | Unequip armor by ID |
 | POST | `/api/characters/{id}/apply-condition` | Apply a condition |
+| DELETE | `/api/characters/{id}/conditions/{conditionId}` | Remove an active condition by ID |
 | POST | `/api/characters/{id}/rest` | Reset actions, restore spell slots, and heal fully |
 | POST | `/api/characters/{id}/damage?amount=…` | Apply damage |
 | POST | `/api/characters/{id}/heal?amount=…` | Heal damage |
@@ -171,7 +176,7 @@ All `/api/**` routes require the `X-API-KEY` header. Actuator routes are public.
 | POST | `/api/encounters/{id}/next-turn` | Advance active participant/round |
 | POST | `/api/encounters/{id}/end` | End an encounter |
 
-The API currently lacks list/search, deletion, item/weapon unequip, condition removal, pagination, versioning, and idempotency controls. Character IDs come from callers, while encounter IDs are generated by the server.
+The API still lacks list/search, item/weapon unequip, pagination, versioning, and idempotency controls. The previously-asymmetric unequip-armor and remove-condition-by-ID gaps were resolved in Phase 9. Character IDs come from callers, while encounter IDs are generated by the server.
 
 ## Persistence and cache design
 
@@ -188,6 +193,7 @@ Flyway history:
 | V5 | Encounters and ordered participants |
 | V6 | Java migration from string modifier sources to structured sources |
 | V7 | Equipped armor |
+| V8 | Optimistic-lock `version` columns on `characters` and `encounters` |
 
 Repository adapters use `@Cacheable` on reads and `@CachePut` on saves for both aggregates. The production/default cache is Redis with a 60-minute TTL and typed Jackson serialization; tests use Spring's simple in-memory cache. PostgreSQL remains the system of record.
 
@@ -197,14 +203,13 @@ Implemented safeguards include stateless security, API-key validation for `/api/
 
 The following must be addressed before an internet-facing production deployment:
 
-1. Replace the default API key and database password with required secrets. Both the application configuration and Compose file currently provide known development fallbacks.
-2. Restrict CORS. The current configuration accepts every origin pattern, method, and header while allowing credentials.
-3. Decide which actuator endpoints may be public. `/actuator/**` bypasses authentication; health details and future endpoints should follow an explicit exposure policy.
-4. Configure trusted proxies before honoring `X-Forwarded-For`. The rate limiter currently trusts this client-controlled header.
-5. Avoid returning raw exception messages from unexpected failures. The generic error handler can disclose implementation or database details.
-6. Review Redis typed deserialization and isolate Redis from untrusted writers. `LaissezFaireSubTypeValidator` is permissive by design.
+1. Enforce non-default API keys and database passwords at startup. Phase 9 made CORS and CORS-origin misconfiguration fatal at startup and removed in-image secret defaults, but the deployer still needs to supply strong production secrets through the environment.
+2. Tighten actuator exposure beyond `/actuator/health` if additional endpoints are enabled in the future. Phase 9 already restricts public access to `/actuator/health` and `/error`, with all other actuator routes requiring the API key.
+3. Use a reverse proxy or trusted-proxy header policy. Phase 9 made `X-Forwarded-For` opt-in (`themis.rate-limit.trust-forwarded-headers=false` by default) and bounded the in-memory rate-limit map, but distributed Redis-backed buckets are still recommended for multi-instance deployments.
+4. Avoid returning raw exception messages from unexpected failures. Phase 9 introduced a generic handler that returns a stable public message with a server-side correlation ID for `500` responses.
+5. Review Redis typed deserialization and isolate Redis from untrusted writers. `LaissezFaireSubtypeValidator` is still permissive by design.
 
-The Docker image uses a two-stage build and a non-root Alpine JRE. Compose correctly waits for PostgreSQL and Redis health, but it embeds development credentials and exposes both data services on host ports.
+The Docker image uses a two-stage build and a non-root Alpine JRE. Compose correctly waits for PostgreSQL and Redis health. Production secrets should be supplied via environment variables (`.env.example` documents the required variables).
 
 ## Test and quality assessment
 
@@ -214,33 +219,34 @@ Fresh verification command:
 mvn -B test
 ```
 
-Result on 2026-07-18:
+Result on 2026-08-03:
 
 ```text
 Tests run: 134, Failures: 0, Errors: 0, Skipped: 1
 BUILD SUCCESS
 ```
 
-The suite covers domain rules, controller behavior, security/rate limiting, and JPA adapter round trips. Flyway validated all seven migrations. The skipped `ThemisEngineApplicationTests` context test is guarded by Testcontainers and requires Docker.
+The suite covers domain rules, application command/query services, controller behavior, API mapper null-safety, security and rate-limit filters, optimistic-locking conflicts, JPA adapter round trips, and ArchUnit boundary enforcement. Flyway validated all eight migrations. The skipped `ThemisEngineApplicationTests` context test is guarded by Testcontainers and requires Docker.
 
 Important limitations:
 
-- integration tests use H2 in PostgreSQL compatibility mode; the only Docker/PostgreSQL application-context test is skipped when Docker is unavailable;
-- Redis behavior and serialization are not integration-tested against Redis;
-- concurrency and cache-coherence scenarios are not covered;
-- the Windows `mvnw.cmd` bootstrap failed before Maven startup in this environment because it indexed a null link target; direct Maven execution succeeded;
-- the test run reports Spring warnings for open-in-view, redundant explicit H2 dialect selection, and an auto-configured development user password.
+- integration tests run against H2 in PostgreSQL compatibility mode in the default suite; the GitHub Actions workflow additionally exercises real PostgreSQL and Redis service containers;
+- Redis behavior and serialization are not integration-tested against Redis in the local suite;
+- the skipped Testcontainers application-context test runs only when Docker is available;
+- the test run reports minor Spring warnings for redundant explicit H2 dialect selection and the auto-configured development user password (harmless because API-key auth is the actual auth path).
 
 ## Strengths
 
 - The central rules have focused unit tests and deterministic randomness injection.
 - Aggregates enforce constructor and mutation invariants instead of relying only on controller validation.
-- API request models are separated from domain models.
+- API request models are separated from domain models via dedicated API mappers; controllers are thin delegates.
 - Repository ports isolate JPA and make transactional orchestration understandable.
 - Cross-character combat updates occur within one Spring transaction.
-- Flyway owns the schema and includes an explicit data migration for a domain contract change.
+- Flyway owns the schema and includes an explicit Java data migration for a domain contract change (V6, modifier sources).
 - Structured modifier sources and source-aware stacking solve a subtle rules problem cleanly.
-- Docker and CI configuration provide a usable delivery baseline.
+- JPA `@Version` columns on both aggregates prevent lost updates and surface conflicts as HTTP `409` (Phase 9).
+- An explicit application layer with command records and ArchUnit guardrails keeps framework concerns outside the rules core.
+- Docker and CI configuration provide a usable delivery baseline, including real PostgreSQL and Redis service containers in GitHub Actions.
 
 ## Risks and improvement priorities
 
@@ -248,10 +254,7 @@ Important limitations:
 
 | Finding | Impact | Recommendation |
 | --- | --- | --- |
-| No JPA `@Version` fields or other optimistic concurrency control | Concurrent read-modify-write requests can silently overwrite character or encounter changes; a transaction alone does not prevent lost updates | Add aggregate version columns, return versions/ETags, and map conflicts to HTTP 409 |
-| Known fallback secrets and unrestricted CORS | An unchanged deployment is easy to access and broadly callable from browsers | Require production secrets at startup and use environment-specific origin allowlists |
-| PostgreSQL production path is not part of the always-running suite | H2 compatibility can miss PostgreSQL SQL, type, locking, and migration differences | Run Testcontainers PostgreSQL tests in CI and make the database adapter suite target PostgreSQL |
-| Client-controlled proxy header drives rate-limit identity | Clients can evade limits by changing `X-Forwarded-For`; the unbounded IP map can grow indefinitely | Trust headers only from configured proxies and use bounded/distributed buckets, preferably Redis-backed |
+| PostgreSQL production path is not part of the always-running local suite | H2 compatibility can miss PostgreSQL SQL, type, locking, and migration differences | Run Testcontainers PostgreSQL tests in CI (done) and make the database adapter suite target PostgreSQL locally as well |
 
 ### Medium priority
 
@@ -260,14 +263,13 @@ Important limitations:
 | Prometheus is configured but no Prometheus registry dependency is present | `/actuator/prometheus` is advertised yet the test startup exposes only one actuator endpoint | Add `micrometer-registry-prometheus` or remove the endpoint claim/configuration |
 | WebSocket starter is unused | Dependency and README imply a real-time interface that does not exist | Implement a documented event channel or remove the starter and roadmap claim |
 | No API schema/versioning | Consumers must infer payloads from Java records and may be broken by changes | Add OpenAPI, examples, error contracts, and an API versioning policy |
-| Generic handler includes exception text | Unexpected errors may leak internal information | Log a correlation ID server-side and return a stable public message |
 | Eager aggregate collections and open-in-view default | Larger characters can cause excessive queries/memory use and hide accidental web-layer loading | Disable open-in-view, profile aggregate loading, and use explicit fetch plans |
 | Redis cache has no tested degradation policy | Redis outages or incompatible serialized values can fail otherwise valid reads | Add Redis integration tests, eviction/version strategy, and a deliberate fail-open/fail-closed policy |
-| Strict hexagonal boundary is incomplete | Framework dependencies in the domain package make isolated reuse harder | Move orchestration to an application package or document the pragmatic boundary |
+| No explicit `UserDetailsService` bean | Spring Boot auto-configures an in-memory user with a generated password, which is irrelevant for the API-key auth path but still logs a warning | Exclude the `UserDetailsServiceAutoConfiguration` or provide an explicit dummy bean to suppress the warning |
 
 ### Product/API backlog
 
-- Add list and delete operations plus symmetric unequip/remove-condition operations.
+- Add list and delete operations plus symmetric weapon/item unequip. (Armor unequip and condition removal by ID were added in Phase 9.)
 - Define encounter participant replacement/removal and duplicate-ID behavior.
 - Add idempotency keys for mutating commands where retries are expected.
 - Separate authentication identities and authorization scopes if multiple clients/users are planned.
@@ -276,7 +278,7 @@ Important limitations:
 
 ## Documentation accuracy
 
-The README is valuable as the original architectural direction, while `Walkthrough.md` is a chronological implementation log. Neither is a fully accurate current reference on its own.
+The README is valuable as the original architectural direction, `Walkthrough.md` is a chronological implementation log, and this report is the current-state reference.
 
 Key differences from the current code:
 
@@ -287,14 +289,16 @@ Key differences from the current code:
 - the walkthrough's earlier test total is stale; the fresh result is 134 tests run with 1 skipped;
 - ADR links previously pointed to a root `DECISIONS.md`; the decision records now live under `docs/ADR/`.
 
+The walkthrough was refreshed on 2026-08-03 with two additional phases (Phase 9: Armor/Optimistic Locking, Phase 10: Application Layer/Commands) and the verification results were updated to 134 tests.
+
 For ongoing maintenance, use this report for the current-state overview, `Walkthrough.md` for history, and [the ADR index](ADR/DECISIONS.md) for durable decisions.
 
 ## Recommended delivery sequence
 
-1. **Secure configuration:** mandatory secrets, CORS allowlist, actuator policy, safe error responses, and trusted-proxy handling.
-2. **Protect consistency:** optimistic locking for both aggregates plus conflict and concurrency tests.
-3. **Make verification production-representative:** PostgreSQL and Redis Testcontainers in CI; resolve the Windows wrapper issue.
-4. **Stabilize the contract:** OpenAPI, endpoint examples, versioning/idempotency policy, and missing symmetric operations.
+1. **Secure configuration:** Phase 9 resolved: mandatory CORS allowlist, trusted-proxy opt-in, bounded rate-limit map, public-only `/actuator/health`, sanitized error responses with correlation IDs. Remaining: enforce strong secrets at startup (P0).
+2. **Protect consistency:** Phase 9 resolved: optimistic locking for both aggregates with `409 Conflict`, concurrency integration test, GitHub Actions with PostgreSQL/Redis services.
+3. **Make verification production-representative:** In progress: the GitHub Actions workflow uses PostgreSQL service containers. Local `mvn test` still relies on H2; consider enabling Testcontainers locally or adding a `postgresql` Maven profile.
+4. **Stabilize the contract:** OpenAPI, endpoint examples, versioning/idempotency policy, and missing symmetric operations (weapon/item unequip, character/encounter deletion).
 5. **Complete observability:** Prometheus registry, metrics for cache/rate limit/rules failures, correlation IDs, and tracing only if operationally required.
 6. **Add real-time delivery deliberately:** domain events first, then WebSocket/SSE based on client needs.
 7. **Expand Pathfinder scope:** add rule modules and content only behind well-tested domain contracts and new ADRs where interpretations matter.
@@ -315,4 +319,4 @@ The application listens on port `8080`; PostgreSQL and Redis default to `5432` a
 
 ## Conclusion
 
-Themis Engine has a credible, tested core and good separation between HTTP contracts, rule objects, and persistence adapters. Its current maturity is appropriate for controlled development or an internal integration. The fastest path to production confidence is not broader game-rule coverage; it is securing configuration, adding concurrency control, testing against real PostgreSQL/Redis services, and publishing a stable API contract. Once those foundations are in place, the domain model is well positioned for incremental Pathfinder rule expansion and real-time clients.
+Themis Engine has a credible, tested core and good separation between HTTP contracts, rule objects, application use cases, and persistence adapters. Its current maturity is well beyond a prototype and approaching production readiness: aggregates are versioned and conflict-safe, the API is hardened against basic security threats, the domain is free of framework annotations, and ArchUnit guardrails enforce architectural boundaries with every build. The fastest path to production confidence is completing the remaining security defaults (mandatory secrets), testing against real PostgreSQL/Redis locally, publishing a stable API contract, and adding the missing symmetric operations (weapon/item unequip, aggregate deletion). Once those foundations are in place, the domain model is well positioned for incremental Pathfinder rule expansion and real-time clients.

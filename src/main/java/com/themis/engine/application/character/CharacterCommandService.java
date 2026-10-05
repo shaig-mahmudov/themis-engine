@@ -12,6 +12,10 @@ import com.themis.engine.domain.StatType;
 import com.themis.engine.domain.Weapon;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import jakarta.persistence.OptimisticLockException;
 
 import java.util.List;
 import java.util.Objects;
@@ -22,6 +26,15 @@ import java.util.Optional;
  */
 @Service
 @Transactional
+@Retryable(
+    retryFor = {
+        org.springframework.dao.OptimisticLockingFailureException.class,
+        ObjectOptimisticLockingFailureException.class,
+        OptimisticLockException.class
+    },
+    maxAttempts = 3,
+    backoff = @Backoff(delay = 50, maxDelay = 100, multiplier = 2.0)
+)
 public class CharacterCommandService {
 
     private final CharacterStore characterStore;

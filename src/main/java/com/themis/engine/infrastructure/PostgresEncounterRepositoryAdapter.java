@@ -5,8 +5,13 @@ import com.themis.engine.domain.Encounter;
 import com.themis.engine.domain.EncounterParticipant;
 import com.themis.engine.domain.EncounterStatus;
 import com.themis.engine.domain.EncounterStore;
+import jakarta.persistence.OptimisticLockException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,9 +23,16 @@ import java.util.Optional;
 public class PostgresEncounterRepositoryAdapter implements EncounterStore {
 
     private final EncounterJpaRepository repository;
+    private final CacheManager cacheManager;
 
     public PostgresEncounterRepositoryAdapter(EncounterJpaRepository repository) {
+        this(repository, null);
+    }
+
+    @Autowired
+    public PostgresEncounterRepositoryAdapter(EncounterJpaRepository repository, CacheManager cacheManager) {
         this.repository = repository;
+        this.cacheManager = cacheManager;
     }
 
     @Override
@@ -31,18 +43,32 @@ public class PostgresEncounterRepositoryAdapter implements EncounterStore {
             throw new IllegalArgumentException("Encounter cannot be null");
         }
         EncounterEntity entity = toEntity(encounter);
-        EncounterEntity savedEntity = repository.save(entity);
-        return toDomain(savedEntity);
+        try {
+            EncounterEntity savedEntity = repository.saveAndFlush(entity);
+            return toDomain(savedEntity);
+        } catch (OptimisticLockingFailureException | OptimisticLockException ex) {
+            evictEncounterCache(encounter.getId());
+            throw ex;
+        }
     }
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = "encounters", key = "#id")
+    @Cacheable(value = "encounters", key = "#id", unless = "#result == null")
     public Optional<Encounter> findById(String id) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("Encounter ID cannot be null or blank");
         }
         return repository.findById(id).map(this::toDomain);
+    }
+
+    private void evictEncounterCache(String encounterId) {
+        if (cacheManager != null && encounterId != null) {
+            Cache cache = cacheManager.getCache("encounters");
+            if (cache != null) {
+                cache.evictIfPresent(encounterId);
+            }
+        }
     }
 
     private EncounterEntity toEntity(Encounter domain) {

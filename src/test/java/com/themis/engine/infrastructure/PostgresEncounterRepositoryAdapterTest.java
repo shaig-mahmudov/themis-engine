@@ -103,5 +103,13 @@ class PostgresEncounterRepositoryAdapterTest {
         assertEquals(2, loadedFight.getParticipants().size());
         assertEquals("lair-1", loadedFight.getParticipants().get(0).combatantId());
         assertEquals("hero-1", loadedFight.getParticipants().get(1).combatantId());
+        assertEquals(1L, loadedFight.getVersion());
+
+        // 6. Advance turn and save again to verify consecutive @Version increments in cache and DB
+        loadedFight.nextTurn();
+        Encounter afterNextTurn = encounterStore.save(loadedFight);
+        assertEquals(2L, afterNextTurn.getVersion());
+        assertEquals(3, afterNextTurn.getCurrentRound());
+        assertEquals(0, afterNextTurn.getActiveParticipantIndex());
     }
 }

@@ -175,5 +175,21 @@ class PostgresCharacterRepositoryAdapterTest {
         assertEquals(6, loadedArmor.maxDexterityBonus());
         // Verify armor + dex cap on loaded AC
         assertEquals(15, loaded.getArmorClass());
+        assertNotNull(loaded.getVersion());
+        assertEquals(0L, loaded.getVersion());
+
+        // 9. Sequential updates flush immediately and increment @Version in cache and DB
+        loaded.damage(5);
+        Character afterFirstUpdate = characterStore.save(loaded);
+        assertEquals(1L, afterFirstUpdate.getVersion());
+        assertEquals(20, afterFirstUpdate.getCurrentHitPoints());
+
+        Character cachedAfterFirstUpdate = characterStore.findById("hero-456").orElseThrow();
+        assertEquals(1L, cachedAfterFirstUpdate.getVersion());
+
+        cachedAfterFirstUpdate.heal(3);
+        Character afterSecondUpdate = characterStore.save(cachedAfterFirstUpdate);
+        assertEquals(2L, afterSecondUpdate.getVersion());
+        assertEquals(23, afterSecondUpdate.getCurrentHitPoints());
     }
 }

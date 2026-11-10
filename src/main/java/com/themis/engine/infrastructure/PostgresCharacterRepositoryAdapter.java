@@ -5,8 +5,13 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.themis.engine.domain.Character;
 import com.themis.engine.domain.*;
+import jakarta.persistence.OptimisticLockException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,10 +26,21 @@ public class PostgresCharacterRepositoryAdapter implements CharacterStore {
 
     private final CharacterJpaRepository repository;
     private final ObjectMapper objectMapper;
+    private final CacheManager cacheManager;
 
     public PostgresCharacterRepositoryAdapter(CharacterJpaRepository repository, ObjectMapper objectMapper) {
+        this(repository, objectMapper, null);
+    }
+
+    @Autowired
+    public PostgresCharacterRepositoryAdapter(
+        CharacterJpaRepository repository,
+        ObjectMapper objectMapper,
+        CacheManager cacheManager
+    ) {
         this.repository = repository;
         this.objectMapper = objectMapper;
+        this.cacheManager = cacheManager;
     }
 
     @Override
@@ -35,18 +51,32 @@ public class PostgresCharacterRepositoryAdapter implements CharacterStore {
             throw new IllegalArgumentException("Character cannot be null");
         }
         CharacterEntity entity = toEntity(character);
-        CharacterEntity savedEntity = repository.save(entity);
-        return toDomain(savedEntity);
+        try {
+            CharacterEntity savedEntity = repository.saveAndFlush(entity);
+            return toDomain(savedEntity);
+        } catch (OptimisticLockingFailureException | OptimisticLockException ex) {
+            evictCharacterCache(character.getId());
+            throw ex;
+        }
     }
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = "characters", key = "#id")
+    @Cacheable(value = "characters", key = "#id", unless = "#result == null")
     public Optional<Character> findById(String id) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("ID cannot be null or blank");
         }
         return repository.findById(id).map(this::toDomain);
+    }
+
+    private void evictCharacterCache(String characterId) {
+        if (cacheManager != null && characterId != null) {
+            Cache cache = cacheManager.getCache("characters");
+            if (cache != null) {
+                cache.evictIfPresent(characterId);
+            }
+        }
     }
 
     private CharacterEntity toEntity(Character domain) {

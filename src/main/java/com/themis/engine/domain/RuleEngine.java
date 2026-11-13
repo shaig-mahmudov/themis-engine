@@ -39,7 +39,9 @@ public class RuleEngine {
             case RANGED, FINESSE -> StatType.DEXTERITY;
         };
 
-        int attackBonus = attacker.getBaseAttackBonus() + attacker.getAttributeModifier(attackAttribute);
+        int attackBonus = attacker.getBaseAttackBonus()
+            + attacker.getAttributeModifier(attackAttribute)
+            + attacker.getAttackBonusWith(weapon);
         int totalAttackRoll = d20Roll + attackBonus;
         int targetAc = target.getArmorClass();
 
@@ -79,9 +81,10 @@ public class RuleEngine {
             case MELEE, FINESSE -> attacker.getAttributeModifier(StatType.STRENGTH);
             case RANGED -> 0; // Standard ranged weapons receive no strength bonus to damage
         };
+        int weaponDamageBonus = attacker.getDamageBonusWith(weapon);
         
         for (int i = 0; i < multiplier; i++) {
-            damageSum += weapon.damageRoll().roll(random) + damageAttrBonus;
+            damageSum += weapon.damageRoll().roll(random) + damageAttrBonus + weaponDamageBonus;
         }
         
         int damageDealt = Math.max(1, damageSum);

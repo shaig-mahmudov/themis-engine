@@ -171,4 +171,53 @@ class RuleEngineTest {
         assertEquals(5, result.damageDealt());
         assertEquals(10, target.getCurrentHitPoints()); // 15 - 5 = 10
     }
+
+    @Test
+    void testWeaponModifiersAreScopedToAttackingWeaponOnly() {
+        attacker = new Character("attacker", "Attacker", 1, 14, 14, 10, 10, 10, 10, 10, 1, 0, 0, 0);
+
+        Weapon magicLongsword = new Weapon(
+            "magic-longsword",
+            "+2 Longsword",
+            WeaponType.MELEE,
+            Map.of(
+                StatType.ATTACK_ROLL, java.util.List.of(new Modifier(2, ModifierType.ENHANCEMENT, new ModifierSource("magic-longsword", "+2 Longsword", SourceType.ITEM))),
+                StatType.DAMAGE_ROLL, java.util.List.of(new Modifier(2, ModifierType.ENHANCEMENT, new ModifierSource("magic-longsword", "+2 Longsword", SourceType.ITEM)))
+            ),
+            DiceRoll.parse("1d8"),
+            19,
+            2
+        );
+        Weapon plainDagger = new Weapon(
+            "plain-dagger",
+            "Dagger",
+            WeaponType.MELEE,
+            Map.of(),
+            DiceRoll.parse("1d4"),
+            19,
+            2
+        );
+
+        attacker.equipWeapon(magicLongsword);
+        attacker.equipWeapon(plainDagger);
+
+        // Equipping a magic weapon does not mutate the character's Base Attack Bonus
+        assertEquals(1, attacker.getBaseAttackBonus());
+
+        var mockRng = mock(RandomGenerator.class);
+        when(mockRng.nextInt(1, 5)).thenReturn(3); // 1d4 rolls 3
+        when(mockRng.nextInt(1, 9)).thenReturn(4); // 1d8 rolls 4
+
+        // Attacking with plain dagger: d20 (12) + BAB (1) + STR (2) + weapon (0) = 15 vs AC 15 -> Hit for 3 + 2 = 5 damage
+        var daggerResult = ruleEngine.resolveAttack(attacker, plainDagger, target, 12, mockRng);
+        assertTrue(daggerResult.isHit());
+        assertEquals(15, daggerResult.attackRoll());
+        assertEquals(5, daggerResult.damageDealt());
+
+        // Attacking with +2 longsword: d20 (10) + BAB (1) + STR (2) + weapon (2) = 15 vs AC 15 -> Hit for 4 + 2 (STR) + 2 (weapon) = 8 damage
+        var swordResult = ruleEngine.resolveAttack(attacker, magicLongsword, target, 10, mockRng);
+        assertTrue(swordResult.isHit());
+        assertEquals(15, swordResult.attackRoll());
+        assertEquals(8, swordResult.damageDealt());
+    }
 }

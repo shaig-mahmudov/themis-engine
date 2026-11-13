@@ -34,6 +34,13 @@ public class ModifierStack implements java.io.Serializable {
     }
 
     /**
+     * Returns an immutable view of the active modifiers in this stack.
+     */
+    public List<Modifier> getModifiers() {
+        return List.copyOf(modifiers);
+    }
+
+    /**
      * Calculates the total value of all active modifiers in the stack.
      * Enforces the following rules:
      * 1. Stackable modifier types (e.g., DODGE, UNTYPED) sum up.

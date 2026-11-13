@@ -27,6 +27,8 @@ public class Character implements java.io.Serializable {
     
     private final ModifierStack hitPointsModifierStack = new ModifierStack();
     private final ModifierStack baseAttackBonusModifierStack = new ModifierStack();
+    private final ModifierStack attackRollModifierStack = new ModifierStack();
+    private final ModifierStack damageRollModifierStack = new ModifierStack();
 
     // State
     private int currentDamage = 0;
@@ -163,6 +165,43 @@ public class Character implements java.io.Serializable {
         return baseAttackBonus + baseAttackBonusModifierStack.getTotal();
     }
 
+    public int getAttackRollModifier() {
+        return attackRollModifierStack.getTotal();
+    }
+
+    public int getDamageRollModifier() {
+        return damageRollModifierStack.getTotal();
+    }
+
+    /**
+     * Resolves the total attack roll modifier when attacking with the given weapon,
+     * combining character-wide ATTACK_ROLL modifiers with the weapon's own attack modifiers.
+     */
+    public int getAttackBonusWith(Weapon weapon) {
+        if (weapon == null) {
+            throw new IllegalArgumentException("Weapon cannot be null");
+        }
+        ModifierStack combined = new ModifierStack();
+        attackRollModifierStack.getModifiers().forEach(combined::add);
+        weapon.getModifiersFor(StatType.ATTACK_ROLL).forEach(combined::add);
+        weapon.getModifiersFor(StatType.BASE_ATTACK_BONUS).forEach(combined::add);
+        return combined.getTotal();
+    }
+
+    /**
+     * Resolves the total flat damage modifier when attacking with the given weapon,
+     * combining character-wide DAMAGE_ROLL modifiers with the weapon's own damage modifiers.
+     */
+    public int getDamageBonusWith(Weapon weapon) {
+        if (weapon == null) {
+            throw new IllegalArgumentException("Weapon cannot be null");
+        }
+        ModifierStack combined = new ModifierStack();
+        damageRollModifierStack.getModifiers().forEach(combined::add);
+        weapon.getModifiersFor(StatType.DAMAGE_ROLL).forEach(combined::add);
+        return combined.getTotal();
+    }
+
     public int getBaseAttackBonusRaw() {
         return baseAttackBonus;
     }
@@ -286,15 +325,35 @@ public class Character implements java.io.Serializable {
         return getCurrentHitPoints() <= -getAttributeScore(StatType.CONSTITUTION);
     }
 
+    // --- Action & Spellcasting execution ---
+
+    public void consumeAction(ActionType actionType) {
+        if (actionType == null) {
+            throw new IllegalArgumentException("ActionType cannot be null");
+        }
+        if (!isConscious() || isDead()) {
+            throw new IllegalStateException("Cannot perform actions while unconscious or dead");
+        }
+        turnState.consume(actionType);
+    }
+
+    public void consumeSpellSlot(int spellLevel) {
+        if (!isConscious() || isDead()) {
+            throw new IllegalStateException("Cannot cast spells while unconscious or dead");
+        }
+        if (spellcastingFeature == null) {
+            throw new IllegalStateException("Character has no spellcasting feature");
+        }
+        spellcastingFeature.consumeSlot(spellLevel);
+    }
+
     // --- Equipment & Conditions logic ---
 
     public void equip(EquippableItem item) {
         if (item == null) {
             throw new IllegalArgumentException("Cannot equip null item");
         }
-        if (equippedItems.contains(item)) {
-            return;
-        }
+        unequipItemById(item.id());
         equippedItems.add(item);
         applyModifiers(item.modifiers());
     }
@@ -303,8 +362,19 @@ public class Character implements java.io.Serializable {
         if (item == null) {
             throw new IllegalArgumentException("Cannot unequip null item");
         }
-        if (equippedItems.remove(item)) {
-            removeModifiers(item.modifiers());
+        unequipItemById(item.id());
+    }
+
+    public void unequipItemById(String itemId) {
+        if (itemId == null || itemId.isBlank()) {
+            throw new IllegalArgumentException("Cannot unequip null or blank item ID");
+        }
+        EquippableItem found = equippedItems.stream()
+            .filter(i -> i.id().equals(itemId))
+            .findFirst()
+            .orElse(null);
+        if (found != null && equippedItems.remove(found)) {
+            removeModifiers(found.modifiers());
         }
     }
 
@@ -312,19 +382,28 @@ public class Character implements java.io.Serializable {
         if (weapon == null) {
             throw new IllegalArgumentException("Cannot equip null weapon");
         }
-        if (equippedWeapons.contains(weapon)) {
-            return;
-        }
+        unequipWeaponById(weapon.id());
         equippedWeapons.add(weapon);
-        applyModifiers(weapon.modifiers());
+        applyPassiveWeaponModifiers(weapon.modifiers());
     }
 
     public void unequipWeapon(Weapon weapon) {
         if (weapon == null) {
             throw new IllegalArgumentException("Cannot unequip null weapon");
         }
-        if (equippedWeapons.remove(weapon)) {
-            removeModifiers(weapon.modifiers());
+        unequipWeaponById(weapon.id());
+    }
+
+    public void unequipWeaponById(String weaponId) {
+        if (weaponId == null || weaponId.isBlank()) {
+            throw new IllegalArgumentException("Cannot unequip null or blank weapon ID");
+        }
+        Weapon found = equippedWeapons.stream()
+            .filter(w -> w.id().equals(weaponId))
+            .findFirst()
+            .orElse(null);
+        if (found != null && equippedWeapons.remove(found)) {
+            removePassiveWeaponModifiers(found.modifiers());
         }
     }
 
@@ -332,9 +411,7 @@ public class Character implements java.io.Serializable {
         if (armor == null) {
             throw new IllegalArgumentException("Cannot equip null armor");
         }
-        if (equippedArmors.contains(armor)) {
-            return;
-        }
+        unequipArmorById(armor.id());
         equippedArmors.add(armor);
         applyModifiers(armor.modifiers());
     }
@@ -343,9 +420,7 @@ public class Character implements java.io.Serializable {
         if (armor == null) {
             throw new IllegalArgumentException("Cannot unequip null armor");
         }
-        if (equippedArmors.remove(armor)) {
-            removeModifiers(armor.modifiers());
-        }
+        unequipArmorById(armor.id());
     }
 
     public void unequipArmorById(String armorId) {
@@ -356,8 +431,8 @@ public class Character implements java.io.Serializable {
             .filter(a -> a.id().equals(armorId))
             .findFirst()
             .orElse(null);
-        if (found != null) {
-            unequipArmor(found);
+        if (found != null && equippedArmors.remove(found)) {
+            removeModifiers(found.modifiers());
         }
     }
 
@@ -365,9 +440,7 @@ public class Character implements java.io.Serializable {
         if (condition == null) {
             throw new IllegalArgumentException("Cannot apply null condition");
         }
-        if (activeConditions.contains(condition)) {
-            return;
-        }
+        removeConditionById(condition.id());
         activeConditions.add(condition);
         applyModifiers(condition.modifiers());
     }
@@ -440,6 +513,34 @@ public class Character implements java.io.Serializable {
 
     // --- Internal Modifier Helpers ---
 
+    private static boolean isWeaponScopedStat(StatType statType) {
+        return statType == StatType.ATTACK_ROLL
+            || statType == StatType.DAMAGE_ROLL
+            || statType == StatType.BASE_ATTACK_BONUS;
+    }
+
+    private void applyPassiveWeaponModifiers(Map<StatType, List<Modifier>> modifiersMap) {
+        for (Map.Entry<StatType, List<Modifier>> entry : modifiersMap.entrySet()) {
+            if (!isWeaponScopedStat(entry.getKey())) {
+                ModifierStack stack = getModifierStackFor(entry.getKey());
+                if (stack != null) {
+                    entry.getValue().forEach(stack::add);
+                }
+            }
+        }
+    }
+
+    private void removePassiveWeaponModifiers(Map<StatType, List<Modifier>> modifiersMap) {
+        for (Map.Entry<StatType, List<Modifier>> entry : modifiersMap.entrySet()) {
+            if (!isWeaponScopedStat(entry.getKey())) {
+                ModifierStack stack = getModifierStackFor(entry.getKey());
+                if (stack != null) {
+                    entry.getValue().forEach(stack::remove);
+                }
+            }
+        }
+    }
+
     private void applyModifiers(Map<StatType, List<Modifier>> modifiersMap) {
         for (Map.Entry<StatType, List<Modifier>> entry : modifiersMap.entrySet()) {
             ModifierStack stack = getModifierStackFor(entry.getKey());
@@ -469,6 +570,10 @@ public class Character implements java.io.Serializable {
             return hitPointsModifierStack;
         } else if (statType == StatType.BASE_ATTACK_BONUS) {
             return baseAttackBonusModifierStack;
+        } else if (statType == StatType.ATTACK_ROLL) {
+            return attackRollModifierStack;
+        } else if (statType == StatType.DAMAGE_ROLL) {
+            return damageRollModifierStack;
         }
         return null;
     }

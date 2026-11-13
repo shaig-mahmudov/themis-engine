@@ -20,5 +20,14 @@ public enum StatType {
     // Defensive & Combat Stats
     ARMOR_CLASS,
     BASE_ATTACK_BONUS,
-    HIT_POINTS
+    ATTACK_ROLL,
+    DAMAGE_ROLL,
+    HIT_POINTS;
+
+    public boolean isAbilityScore() {
+        return switch (this) {
+            case STRENGTH, DEXTERITY, CONSTITUTION, INTELLIGENCE, WISDOM, CHARISMA -> true;
+            default -> false;
+        };
+    }
 }

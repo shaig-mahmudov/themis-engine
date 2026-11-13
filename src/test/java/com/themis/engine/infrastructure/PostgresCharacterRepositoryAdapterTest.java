@@ -111,8 +111,9 @@ class PostgresCharacterRepositoryAdapterTest {
         assertEquals(16, original.getSpellSaveDC(1));
         // STR: Base 10 + Fatigued -2 = 8
         assertEquals(8, original.getAttributeScore(StatType.STRENGTH));
-        // BAB: Base 2 + Weapon Enhancement 1 = 3
-        assertEquals(3, original.getBaseAttackBonus());
+        // BAB remains Base 2; weapon enhancement (+1) is scoped to attacks with that weapon
+        assertEquals(2, original.getBaseAttackBonus());
+        assertEquals(1, original.getAttackBonusWith(masterworkDagger));
         // Max HP: 30 + (Level 5 * CON Mod 1) = 35. Current HP: 35 - 10 = 25
         assertEquals(35, original.getMaxHitPoints());
         assertEquals(25, original.getCurrentHitPoints());
@@ -166,8 +167,9 @@ class PostgresCharacterRepositoryAdapterTest {
         assertEquals(19, loadedWeapon.criticalThreatMin());
         assertEquals(2, loadedWeapon.criticalMultiplier());
         assertEquals("1d4", loadedWeapon.damageRoll().toString());
-        // Verify weapon enhancement modifier on loaded BAB
-        assertEquals(3, loaded.getBaseAttackBonus());
+        // Verify weapon enhancement modifier is scoped to the loaded weapon without mutating raw BAB
+        assertEquals(2, loaded.getBaseAttackBonus());
+        assertEquals(1, loaded.getAttackBonusWith(loadedWeapon));
 
         Armor loadedArmor = loaded.getEquippedArmors().get(0);
         assertEquals("mithral-shirt", loadedArmor.id());

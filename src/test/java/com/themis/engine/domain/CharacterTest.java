@@ -366,4 +366,69 @@ class CharacterTest {
         // AC = 10 base + 4 dex = 14
         assertEquals(14, fighter.getArmorClass());
     }
+
+    @Test
+    void testDuplicateEquipmentAndConditionIdsReplaceExistingEntriesCleanly() {
+        EquippableItem beltV1 = new EquippableItem(
+            "belt-str",
+            "Belt of Giant Strength +2",
+            Map.of(StatType.STRENGTH, List.of(new Modifier(2, ModifierType.ENHANCEMENT, new ModifierSource("belt-str", "Belt +2", SourceType.ITEM))))
+        );
+        EquippableItem beltV2 = new EquippableItem(
+            "belt-str",
+            "Belt of Giant Strength +4",
+            Map.of(StatType.STRENGTH, List.of(new Modifier(4, ModifierType.ENHANCEMENT, new ModifierSource("belt-str", "Belt +4", SourceType.ITEM))))
+        );
+
+        fighter.equip(beltV1);
+        assertEquals(17, fighter.getAttributeScore(StatType.STRENGTH));
+        assertEquals(1, fighter.getEquippedItems().size());
+
+        // Re-equipping with the same ID replaces beltV1 instead of adding a duplicate entry
+        fighter.equip(beltV2);
+        assertEquals(19, fighter.getAttributeScore(StatType.STRENGTH));
+        assertEquals(1, fighter.getEquippedItems().size());
+
+        fighter.unequipItemById("belt-str");
+        assertEquals(15, fighter.getAttributeScore(StatType.STRENGTH));
+        assertTrue(fighter.getEquippedItems().isEmpty());
+
+        // Re-applying a condition with the same ID refreshes its duration
+        Condition shakenShort = new Condition(
+            "cond-shaken",
+            "Shaken",
+            Map.of(StatType.WILL, List.of(new Modifier(-2, ModifierType.MORALE, new ModifierSource("cond-shaken", "Shaken", SourceType.CONDITION)))),
+            1,
+            "Fear"
+        );
+        Condition shakenRefreshed = new Condition(
+            "cond-shaken",
+            "Shaken",
+            Map.of(StatType.WILL, List.of(new Modifier(-2, ModifierType.MORALE, new ModifierSource("cond-shaken", "Shaken", SourceType.CONDITION)))),
+            4,
+            "Fear"
+        );
+
+        fighter.applyCondition(shakenShort);
+        assertEquals(1, fighter.getActiveConditions().get(0).durationRounds());
+
+        fighter.applyCondition(shakenRefreshed);
+        assertEquals(1, fighter.getActiveConditions().size());
+        assertEquals(4, fighter.getActiveConditions().get(0).durationRounds());
+    }
+
+    @Test
+    void testUnconsciousOrDeadCharacterCannotConsumeActionsOrSpellSlots() {
+        SpellcastingFeature sf = new SpellcastingFeature(1, StatType.CHARISMA);
+        sf.setMaxSlots(1, 2);
+        sf.restAndRecover();
+        fighter.setSpellcastingFeature(sf);
+
+        // Fighter has 12 Max HP; deal 13 damage -> -1 HP (unconscious)
+        fighter.damage(13);
+        assertFalse(fighter.isConscious());
+
+        assertThrows(IllegalStateException.class, () -> fighter.consumeAction(ActionType.STANDARD));
+        assertThrows(IllegalStateException.class, () -> fighter.consumeSpellSlot(1));
+    }
 }

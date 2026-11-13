@@ -78,12 +78,34 @@ public class CharacterController {
             .orElse(ResponseEntity.notFound().build());
     }
 
+    @PostMapping("/{id}/unequip-item")
+    public ResponseEntity<CharacterResponse> unequipItem(
+        @PathVariable String id,
+        @RequestParam String itemId
+    ) {
+        return characterCommandService.unequipItem(id, itemId)
+            .map(mapper::toResponse)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping("/{id}/equip-weapon")
     public ResponseEntity<CharacterResponse> equipWeapon(
         @PathVariable String id,
         @Valid @RequestBody EquipWeaponRequest request
     ) {
         return characterCommandService.equipWeapon(id, mapper.toDomain(request))
+            .map(mapper::toResponse)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/unequip-weapon")
+    public ResponseEntity<CharacterResponse> unequipWeapon(
+        @PathVariable String id,
+        @RequestParam String weaponId
+    ) {
+        return characterCommandService.unequipWeapon(id, weaponId)
             .map(mapper::toResponse)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());

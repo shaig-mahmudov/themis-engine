@@ -109,6 +109,7 @@ public class CharacterApiMapper {
             .map(w -> new CharacterResponse.EquippedWeaponDto(
                 w.id(),
                 w.name(),
+                w.type(),
                 w.modifiers(),
                 w.damageRoll().toString(),
                 w.criticalThreatMin(),

@@ -1,6 +1,7 @@
 package com.themis.engine.api.character.response;
 
 import com.themis.engine.domain.StatType;
+import com.themis.engine.domain.WeaponType;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +36,7 @@ public record CharacterResponse(
     public record EquippedWeaponDto(
         String id,
         String name,
+        WeaponType type,
         Map<StatType, List<com.themis.engine.domain.Modifier>> modifiers,
         String damageRoll,
         int criticalThreatMin,

@@ -60,12 +60,32 @@ public class CharacterCommandService {
         });
     }
 
+    public Optional<Character> unequipItem(String id, String itemId) {
+        if (itemId == null || itemId.isBlank()) {
+            throw new IllegalArgumentException("Item ID cannot be null or blank");
+        }
+        return characterStore.findById(id).map(c -> {
+            c.unequipItemById(itemId);
+            return characterStore.save(c);
+        });
+    }
+
     public Optional<Character> equipWeapon(String id, Weapon weapon) {
         if (weapon == null) {
             throw new IllegalArgumentException("Weapon cannot be null");
         }
         return characterStore.findById(id).map(c -> {
             c.equipWeapon(weapon);
+            return characterStore.save(c);
+        });
+    }
+
+    public Optional<Character> unequipWeapon(String id, String weaponId) {
+        if (weaponId == null || weaponId.isBlank()) {
+            throw new IllegalArgumentException("Weapon ID cannot be null or blank");
+        }
+        return characterStore.findById(id).map(c -> {
+            c.unequipWeaponById(weaponId);
             return characterStore.save(c);
         });
     }
@@ -153,7 +173,7 @@ public class CharacterCommandService {
             throw new IllegalArgumentException("Action type cannot be null");
         }
         return characterStore.findById(id).map(c -> {
-            c.getTurnState().consume(actionType);
+            c.consumeAction(actionType);
             return characterStore.save(c);
         });
     }
@@ -185,10 +205,7 @@ public class CharacterCommandService {
 
     public Optional<Character> consumeSpellSlot(String id, int spellLevel) {
         return characterStore.findById(id).map(c -> {
-            if (c.getSpellcastingFeature() == null) {
-                throw new IllegalStateException("Character has no spellcasting feature");
-            }
-            c.getSpellcastingFeature().consumeSlot(spellLevel);
+            c.consumeSpellSlot(spellLevel);
             return characterStore.save(c);
         });
     }

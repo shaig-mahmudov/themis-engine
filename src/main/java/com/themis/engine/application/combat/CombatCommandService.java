@@ -133,10 +133,13 @@ public class CombatCommandService {
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Weapon " + weaponId + " is not equipped on attacker " + attackerId));
 
+        if (!attacker.isConscious() || attacker.isDead()) {
+            throw new IllegalStateException("Cannot attack: attacker is unconscious or dead");
+        }
         if (!attacker.getTurnState().canConsume(ActionType.STANDARD)) {
             throw new IllegalStateException("Cannot attack: standard action already consumed in current turn");
         }
-        attacker.getTurnState().consume(ActionType.STANDARD);
+        attacker.consumeAction(ActionType.STANDARD);
 
         int roll = d20Roll != null ? d20Roll : activeRandom.nextInt(1, 21);
         AttackResult result = ruleEngine.resolveAttack(attacker, weapon, target, roll, activeRandom);

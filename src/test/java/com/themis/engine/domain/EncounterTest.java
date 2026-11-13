@@ -120,6 +120,27 @@ class EncounterTest {
     }
 
     @Test
+    void testStartEncounterUpdatesCharacterDexterityModifierForTieBreakers() {
+        Encounter encounter = new Encounter("enc-tie", "Tie Breaker Test");
+        // Added when c1 had Dex mod +1 and c2 had Dex mod +2
+        encounter.addParticipant(new EncounterParticipant("c1", CombatantType.CHARACTER, "Valeros", null, null, 1));
+        encounter.addParticipant(new EncounterParticipant("c2", CombatantType.CHARACTER, "Seoni", null, null, 2));
+
+        // Before encounter starts, c1 buffs Dexterity to +4!
+        // With manual rolls c1=10 (total 14) and c2=12 (total 14), c1 wins the tie-breaker (+4 vs +2).
+        Map<String, Integer> manualRolls = Map.of("c1", 10, "c2", 12);
+        Map<String, Integer> currentDexMods = Map.of("c1", 4, "c2", 2);
+
+        encounter.start(manualRolls, RandomGenerator.getDefault(), currentDexMods::get);
+
+        var sorted = encounter.getParticipants();
+        assertEquals("c1", sorted.get(0).combatantId());
+        assertEquals(4, sorted.get(0).dexterityModifier());
+        assertEquals("c2", sorted.get(1).combatantId());
+        assertEquals(2, sorted.get(1).dexterityModifier());
+    }
+
+    @Test
     void testEndEncounter() {
         Encounter encounter = new Encounter("enc-1", "Goblin Ambush");
         encounter.end();

@@ -124,13 +124,16 @@ public class Encounter implements java.io.Serializable {
                 roll = random.nextInt(1, 21);
             }
 
-            int modifier = 0;
-            if (p.combatantType() == CombatantType.CHARACTER) {
-                modifier = dexModLookup.apply(p.combatantId());
+            int modifier = p.dexterityModifier();
+            if (p.combatantType() == CombatantType.CHARACTER && dexModLookup != null) {
+                Integer lookedUp = dexModLookup.apply(p.combatantId());
+                if (lookedUp != null) {
+                    modifier = lookedUp;
+                }
             }
 
             int total = roll + modifier;
-            rolledParticipants.add(p.withInitiative(roll, total));
+            rolledParticipants.add(p.withInitiative(roll, total, modifier));
         }
 
         // Sort by initiativeTotal desc, then dexterityModifier desc, then combatantId asc (stable tie-breaker)

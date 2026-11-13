@@ -29,4 +29,8 @@ public record EncounterParticipant(
     public EncounterParticipant withInitiative(Integer roll, Integer total) {
         return new EncounterParticipant(combatantId, combatantType, name, roll, total, dexterityModifier);
     }
+
+    public EncounterParticipant withInitiative(Integer roll, Integer total, int updatedDexterityModifier) {
+        return new EncounterParticipant(combatantId, combatantType, name, roll, total, updatedDexterityModifier);
+    }
 }
